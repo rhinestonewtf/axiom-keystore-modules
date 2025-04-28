@@ -147,6 +147,7 @@ library RLPReader {
     /// @return offset_ Offset of the encoded data.
     /// @return length_ Length of the encoded data.
     /// @return type_ RLP item type (LIST_ITEM or DATA_ITEM).
+    // solhint-disable-next-line code-complexity
     function _decodeLength(RLPItem memory _in)
         private
         pure
@@ -259,6 +260,7 @@ library RLPReader {
         }
 
         // Mostly based on Solidity's copy_memory_to_memory:
+        // solhint-disable-next-line max-line-length
         // https://github.com/ethereum/solidity/blob/34dd30d71b4da730488be72ff6af7083cf2a91f6/libsolidity/codegen/YulUtilFunctions.cpp#L102-L114
         uint256 src = MemoryPointer.unwrap(_src) + _offset;
         assembly {

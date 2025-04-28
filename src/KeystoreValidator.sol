@@ -14,7 +14,7 @@ import { IStatelessValidator } from
 import { KeystoreUtils } from "@lib/KeystoreUtils.sol";
 
 // Types
-import { KeyMerkleProofData, SignatureData, InstallationData } from "@types/DataTypes.sol";
+import { SignatureData, InstallationData } from "@types/DataTypes.sol";
 import { PackedUserOperation } from "@account-abstraction/interfaces/PackedUserOperation.sol";
 import { _packValidationData as _packValidationData4337 } from
     "@rhinestone/modulekit/external/ERC4337.sol";
@@ -48,13 +48,13 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the storage proof verifier contract.
-    IStorageProofVerifier public immutable storageProofVerifier;
+    IStorageProofVerifier public immutable STORAGE_PROOF_VERIFIER;
 
     /// @notice The address of the keystore bridge contract.
-    address public immutable keystoreBridgeAddress;
+    address public immutable KEYSTORE_BRIDGE;
 
     /// @notice The storage slot of the keystore state root.
-    bytes32 public immutable keystoreStateRootStorageSlot;
+    bytes32 public immutable KEYSTORE_STORAGE_SLOT;
 
     /*//////////////////////////////////////////////////////////////
                               PROOF STATE
@@ -80,20 +80,20 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Mapping from account addresses to their installation data
-    mapping(address account => InstallationData) public accountData;
+    mapping(address account => InstallationData data) public accountData;
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     constructor(
-        address _storageProofVerifier,
-        address _keystoreBridgeAddress,
-        bytes32 _keystoreStateRootStorageSlot
+        address _STORAGE_PROOF_VERIFIER,
+        address _KEYSTORE_BRIDGE,
+        bytes32 _KEYSTORE_STORAGE_SLOT
     ) {
-        storageProofVerifier = IStorageProofVerifier(_storageProofVerifier);
-        keystoreBridgeAddress = _keystoreBridgeAddress;
-        keystoreStateRootStorageSlot = _keystoreStateRootStorageSlot;
+        STORAGE_PROOF_VERIFIER = IStorageProofVerifier(_STORAGE_PROOF_VERIFIER);
+        KEYSTORE_BRIDGE = _KEYSTORE_BRIDGE;
+        KEYSTORE_STORAGE_SLOT = _KEYSTORE_STORAGE_SLOT;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -250,7 +250,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Check if the statelessValidator is registered
         if (address(statelessValidator) == address(0)) {
-            return EIP1271_FAILED; 
+            return EIP1271_FAILED;
         }
 
         // Let the statelessValidator verify the signature
@@ -270,7 +270,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
             blockTimestamp == 0 || currentTimestamp < blockTimestamp
                 || currentTimestamp > blockTimestamp + $.invalidationTime
         ) {
-            return EIP1271_FAILED; 
+            return EIP1271_FAILED;
         }
 
         // Signature is valid
@@ -295,10 +295,10 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         external
     {
         // Verify the storage proof
-        (bytes32 keystoreStateRoot, bytes32 _blockhash) = storageProofVerifier.verifyStorageSlot({
+        (bytes32 keystoreStateRoot, bytes32 _blockhash) = STORAGE_PROOF_VERIFIER.verifyStorageSlot({
             storageProof: storageProof,
-            _address: keystoreBridgeAddress,
-            storageSlot: keystoreStateRootStorageSlot
+            _address: KEYSTORE_BRIDGE,
+            storageSlot: KEYSTORE_STORAGE_SLOT
         });
         // Check if the blockhash is cached
         require(blockhashes[_blockhash], BlockhashNotFound(_blockhash));
