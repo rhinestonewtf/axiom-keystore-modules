@@ -25,8 +25,8 @@ library KeystoreUtils {
     /// @notice Error thrown when a proof claiming to be an exclusion proof isn't valid
     error NotAnExclusionProof();
 
-    /// @notice Error thrown when key data validator format is invalid
-    error InvalidKeyDataValidator();
+    /// @notice Error thrown when stateless validator is invalid
+    error InvalidStatelessValidator();
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -131,16 +131,16 @@ library KeystoreUtils {
         return processMerkleProof(keyDataProof.proof, leafNode, keyDataProof.isLeft);
     }
 
-    /// @notice Extracts the key data consumer codehash from key data
+    /// @notice Extracts the stateless validator codehash from key data
     /// @dev The codehash is expected in the first 33 bytes, with a prefix byte
     /// @param keyData The key data to extract from
     /// @return codeHash The extracted creation code hash
-    function getKeyDataConsumerCodeHash(bytes calldata keyData)
+    function getStatelessValidatorCodeHash(bytes calldata keyData)
         internal
         pure
         returns (bytes32 codeHash)
     {
-        if (bytes1(keyData) != 0x00) revert InvalidKeyDataValidator();
+        if (bytes1(keyData) != 0x00) revert InvalidStatelessValidator();
         assembly {
             codeHash := calldataload(add(keyData.offset, 1))
         }

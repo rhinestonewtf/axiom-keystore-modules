@@ -71,8 +71,9 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     /// @notice Mapping of cached L1 blockhashes
     mapping(bytes32 blockhash => bool isCached) public blockhashes;
 
-    /// @notice Mapping from registered code hashes to deployed key data consumers
-    mapping(bytes32 registeredCodeHash => IStatelessValidator consumer) public consumers;
+    /// @notice Mapping from registered code hashes to deployed statelessValidators
+    mapping(bytes32 registeredCodeHash => IStatelessValidator statelessValidator) public
+        statelessValidators;
 
     /*//////////////////////////////////////////////////////////////
                               ACCOUNT SATE
@@ -183,15 +184,17 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         // Process the IMT proof to get the derived root
         bytes32 derivedImtRoot = data.keyDataProof.processImtKeyData(dataHash, $.keystoreAddress);
 
-        // Get and validate the key data consumer
-        bytes32 keyDataConsumerCodeHash = data.keyDataProof.keyData.getKeyDataConsumerCodeHash();
-        IStatelessValidator keyDataConsumer = consumers[keyDataConsumerCodeHash];
+        // Get and validate the statelessValidator
+        bytes32 statelessValidatorCodeHash =
+            data.keyDataProof.keyData.getStatelessValidatorCodeHash();
+        IStatelessValidator statelessValidator = statelessValidators[statelessValidatorCodeHash];
         require(
-            address(keyDataConsumer) != address(0), UnregisteredCodeHash(keyDataConsumerCodeHash)
+            address(statelessValidator) != address(0),
+            UnregisteredCodeHash(statelessValidatorCodeHash)
         );
 
-        // Let the consumer verify the signature
-        keyDataConsumer.validateSignatureWithData(
+        // Let the statelessValidator verify the signature
+        statelessValidator.validateSignatureWithData(
             userOpHash, data.signatures, data.keyDataProof.keyData
         );
 
@@ -240,18 +243,18 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         bytes32 derivedImtRoot =
             signatureData.keyDataProof.processImtKeyData(dataHash, $.keystoreAddress);
 
-        // Get and validate the key data consumer
-        bytes32 keyDataConsumerCodeHash =
-            signatureData.keyDataProof.keyData.getKeyDataConsumerCodeHash();
-        IStatelessValidator keyDataConsumer = consumers[keyDataConsumerCodeHash];
+        // Get and validate the statelessValidator code hash
+        bytes32 statelessValidatorCodeHash =
+            signatureData.keyDataProof.keyData.getStatelessValidatorCodeHash();
+        IStatelessValidator statelessValidator = statelessValidators[statelessValidatorCodeHash];
 
-        // Check if the consumer is registered
-        if (address(keyDataConsumer) == address(0)) {
-            return EIP1271_FAILED; // Consumer not registered
+        // Check if the statelessValidator is registered
+        if (address(statelessValidator) == address(0)) {
+            return EIP1271_FAILED; // statelessValidator not registered
         }
 
-        // Let the consumer verify the signature
-        bool isValid = keyDataConsumer.validateSignatureWithData(
+        // Let the statelessValidator verify the signature
+        bool isValid = statelessValidator.validateSignatureWithData(
             hash, signatureData.signatures, signatureData.keyDataProof.keyData
         );
 
@@ -318,24 +321,32 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            KEY DATA CONSUMERS
+                          STATELESS VALIDATORS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice registers a key data consumer
-    /// @param consumer The address of the key data consumer contract
-    /// @param bytecodeHash The bytecode hash of the key data consumer contract
-    function registerKeyDataConsumer(address consumer, bytes32 bytecodeHash) external {
-        // Check if the consumer is already registered
+    /// @notice registers a stateless validator
+    /// @param statelessValidator The address of the stateless validator contract
+    /// @param bytecodeHash The bytecode hash of the stateless validator contract
+    function registerStatelessValidator(
+        address statelessValidator,
+        bytes32 bytecodeHash
+    )
+        external
+    {
+        // Check if the statelessValidator is already registered
         require(
-            consumers[bytecodeHash] == IStatelessValidator(address(0)),
+            statelessValidators[bytecodeHash] == IStatelessValidator(address(0)),
             AlreadyRegistered(bytecodeHash)
         );
-        // Check if the code hash matches the consumer's bytecode
-        require(consumer.codehash == bytecodeHash, CodeHashMismatch(consumer.codehash, consumer));
-        // Register the consumer
-        consumers[bytecodeHash] = IStatelessValidator(consumer);
+        // Check if the code hash matches the statelessValidator's bytecode
+        require(
+            statelessValidator.codehash == bytecodeHash,
+            CodeHashMismatch(statelessValidator.codehash, statelessValidator)
+        );
+        // Register the statelessValidator
+        statelessValidators[bytecodeHash] = IStatelessValidator(statelessValidator);
         // Emit an event for the registration
-        emit ConsumerRegistered(bytecodeHash, address(consumer));
+        emit StatelessValidatorRegistered(bytecodeHash, address(statelessValidator));
     }
 
     /*//////////////////////////////////////////////////////////////

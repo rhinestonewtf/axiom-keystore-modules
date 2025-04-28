@@ -35,10 +35,11 @@ interface IKeystoreValidator {
     /// @notice Error thrown when a storage proof is older than an existing one
     error StorageProofTooOld();
 
-    /// @notice Error thrown whe the consumer code hash is different from the one registered
+    /// @notice Error thrown whe the stateless validator code hash is different from the one
+    ///         registered
     /// @param codeHash The expected code hash
-    /// @param consumer The address of the deployed consumer
-    error CodeHashMismatch(bytes32 codeHash, address consumer);
+    /// @param statelessValidator The address of the deployed stateless validator
+    error CodeHashMismatch(bytes32 codeHash, address statelessValidator);
 
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
@@ -48,8 +49,8 @@ interface IKeystoreValidator {
     /// @param _blockhash The cached blockhash
     event BlockhashCached(bytes32 _blockhash);
 
-    /// @notice Emitted when a key data consumer is registered
-    /// @param codeHash The code hash of the consumer
-    /// @param consumer The address of the deployed consumer
-    event ConsumerRegistered(bytes32 codeHash, address consumer);
+    /// @notice Emitted when a stateless validator is registered
+    /// @param codeHash The code hash of the stateless validator
+    /// @param statelessValidator The address of the deployed stateless validator
+    event StatelessValidatorRegistered(bytes32 codeHash, address statelessValidator);
 }
