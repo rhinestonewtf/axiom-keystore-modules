@@ -250,7 +250,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Check if the statelessValidator is registered
         if (address(statelessValidator) == address(0)) {
-            return EIP1271_FAILED; // statelessValidator not registered
+            return EIP1271_FAILED; 
         }
 
         // Let the statelessValidator verify the signature
@@ -258,7 +258,8 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
             hash, signatureData.signatures, signatureData.keyDataProof.keyData
         );
 
-        if (!isValid) return EIP1271_FAILED; // Signature validation failed
+        // Early return if the signature is invalid
+        if (!isValid) return EIP1271_FAILED;
 
         // Check if the derived root is known
         uint48 blockTimestamp = uint48(keystoreStateRoots[derivedImtRoot]);
@@ -269,7 +270,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
             blockTimestamp == 0 || currentTimestamp < blockTimestamp
                 || currentTimestamp > blockTimestamp + $.invalidationTime
         ) {
-            return EIP1271_FAILED; // Signature is invalid
+            return EIP1271_FAILED; 
         }
 
         // Signature is valid
