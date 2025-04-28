@@ -31,8 +31,6 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
                                LIBRARIES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Library for Keystore-related operations and proof verification
-    /// @dev Contains utilities for IMT proof processing and verification
     using KeystoreUtils for *;
 
     /*//////////////////////////////////////////////////////////////
@@ -217,8 +215,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     /// @param sender The address that is requesting the signature validation
     /// @param hash The hash of the data that was signed
     /// @param data The signature and associated data to validate
-    /// @return magicValue Either 0x1626ba7e (valid) or EIP1271_FAILED (invalid) according to
-    /// EIP-1271
+    /// @return magicValue Either EIP1271_SUCCESS or EIP1271_FAILED as per EIP-1271
     function isValidSignatureWithSender(
         address sender,
         bytes32 hash,
@@ -289,6 +286,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     }
 
     /// @notice Caches a keystore state root from a storage proof
+    /// @param storageProof The storage proof containing the keystore state root
     function cacheKeystoreStateRoot(IStorageProofVerifier.StorageProof calldata storageProof)
         external
     {
