@@ -1,0 +1,258 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.27;
+
+// Interfaces
+import { IL1Block } from "@interfaces/IL1Block.sol";
+
+// Libraries
+import { EfficientHashLib } from "@solady/utils/EfficientHashLib.sol";
+import { RLPReader } from "@lib/vendor/RLPReader.sol";
+
+// Types
+import { KeyMerkleProofData, SignatureData } from "@types/DataTypes.sol";
+
+/// @title KeystoreUtils
+/// @notice A library for Keystore-related operations and proof verification
+/// @dev Contains utilities for IMT proof processing and verification
+library KeystoreUtils {
+    /*//////////////////////////////////////////////////////////////
+                                 ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Error thrown when the keystore address doesn't match
+    error InvalidKeystoreAddress();
+
+    /// @notice Error thrown when a proof claiming to be an exclusion proof isn't valid
+    error NotAnExclusionProof();
+
+    /// @notice Error thrown when key data validator format is invalid
+    error InvalidKeyDataValidator();
+
+    /*//////////////////////////////////////////////////////////////
+                               CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Constant representing a non-dummy byte in the IMT
+    bytes1 internal constant NON_DUMMY_BYTE = 0x01;
+
+    /// @notice Constant representing an active leaf in the IMT
+    bytes1 internal constant ACTIVE_LEAF_BYTE = 0x01;
+
+    /// @notice Siloing bytes used to namespace keystore addresses
+    /// @dev Used to isolate different key-value mappings in a single IMT.
+    ///      When storing [original_key, original_value] in the IMT, we compute:
+    ///      key = keccak256(concat([silo_bytes, original_key]))
+    ///      This creates a namespace for keys, preventing conflicts between different
+    ///      applications or systems using the same IMT structure.
+    bytes2 internal constant SILOING_BYTES = bytes2(0x7579);
+
+    /// @notice The address of the L1Block predeploy contract on OP Stack chains
+    /// @dev Used to fetch L1 blockhashes for verification
+    address internal constant L1BLOCK = 0x4200000000000000000000000000000000000015;
+
+    /*//////////////////////////////////////////////////////////////
+                                INTERNAL
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Decodes the user operation signature into SignatureData
+    /// @dev Uses assembly for efficient decoding without copying data
+    /// @param signature The signature bytes from the user operation
+    /// @return out The decoded SignatureData
+    function decodeSignature(bytes calldata signature)
+        internal
+        pure
+        returns (SignatureData calldata out)
+    {
+        /// @solidity memory-safe-assembly
+        assembly {
+            out := signature.offset
+        }
+    }
+
+    /// @notice Processes key data and its proof against the IMT
+    /// @dev Handles both inclusion and exclusion proofs
+    /// @param keyDataProof The proof for the key data
+    /// @param dataHash The hash of the key data
+    /// @param keystoreAddress The keystore address from the account's installation data
+    /// @return The derived IMT root, which should match a cached state root
+    function processImtKeyData(
+        KeyMerkleProofData calldata keyDataProof,
+        bytes32 dataHash,
+        bytes32 keystoreAddress
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        bytes32 leafNode;
+        if (keyDataProof.isExclusion) {
+            // Handle exclusion proof
+            (bytes1 prevDummyByte, bytes32 prevImtKey, bytes32 salt, bytes32 valueHash) =
+                parseExclusionExtraData(keyDataProof.exclusionExtraData);
+
+            // Derive and verify the keystore address
+            bytes32 derivedKeystoreAddress =
+                keccak256(abi.encodePacked(salt, dataHash, keyDataProof.vkeyHash));
+            if (keystoreAddress != derivedKeystoreAddress) revert InvalidKeystoreAddress();
+
+            // Construct the IMT key
+            bytes32 imtKey = keccak256(abi.encodePacked(SILOING_BYTES, derivedKeystoreAddress));
+
+            // Verify the exclusion proof is valid
+            if (
+                !(imtKey > prevImtKey || prevDummyByte == 0x00)
+                    && !(imtKey < keyDataProof.nextImtKey || keyDataProof.nextDummyByte == 0x00)
+            ) revert NotAnExclusionProof();
+
+            // Construct the leaf node for verification
+            leafNode = constructImtLeafNode({
+                dummyByte: prevDummyByte,
+                imtKey: prevImtKey,
+                nextDummyByte: keyDataProof.nextDummyByte,
+                nextImtKey: keyDataProof.nextImtKey,
+                valueHash: valueHash
+            });
+        } else {
+            // Handle inclusion proof
+            bytes32 valueHash = keccak256(abi.encodePacked(dataHash, keyDataProof.vkeyHash));
+            bytes32 imtKey = keccak256(abi.encodePacked(SILOING_BYTES, keystoreAddress));
+
+            // Construct the leaf node for verification
+            leafNode = constructImtLeafNode({
+                dummyByte: NON_DUMMY_BYTE,
+                imtKey: imtKey,
+                nextDummyByte: keyDataProof.nextDummyByte,
+                nextImtKey: keyDataProof.nextImtKey,
+                valueHash: valueHash
+            });
+        }
+
+        // Process the merkle proof to derive the root
+        return processMerkleProof(keyDataProof.proof, leafNode, keyDataProof.isLeft);
+    }
+
+    /// @notice Extracts the key data consumer codehash from key data
+    /// @dev The codehash is expected in the first 33 bytes, with a prefix byte
+    /// @param keyData The key data to extract from
+    /// @return codeHash The extracted creation code hash
+    function getKeyDataConsumerCodeHash(bytes calldata keyData)
+        internal
+        pure
+        returns (bytes32 codeHash)
+    {
+        if (bytes1(keyData) != 0x00) revert InvalidKeyDataValidator();
+        assembly {
+            codeHash := calldataload(add(keyData.offset, 1))
+        }
+    }
+
+    /// @notice Parses the extra data for exclusion proofs
+    /// @dev Extracts the components from packed exclusion extra data
+    /// @param extraData The packed exclusion extra data
+    /// @return  prevDummyByte The dummy byte of the previous key
+    /// @return  prevImtKey The IMT key of the previous key
+    /// @return  salt The salt used for deriving the keystore address
+    /// @return  valueHash The hash of the value
+    function parseExclusionExtraData(bytes calldata extraData)
+        internal
+        pure
+        returns (bytes1 prevDummyByte, bytes32 prevImtKey, bytes32 salt, bytes32 valueHash)
+    {
+        /// @solidity memory-safe-assembly
+        assembly {
+            salt := calldataload(add(extraData.offset, 0x21))
+            valueHash := calldataload(add(extraData.offset, 0x41))
+            calldatacopy(0x1f, extraData.offset, 0x21)
+            prevDummyByte := mload(0x1f)
+            prevImtKey := mload(0x20)
+        }
+    }
+
+    /// @notice Constructs an IMT leaf node
+    /// @dev Formats the leaf node according to the IMT specification
+    /// @param dummyByte Dummy byte for the current key
+    /// @param imtKey The IMT key
+    /// @param nextDummyByte Dummy byte for the next key
+    /// @param nextImtKey The next IMT key
+    /// @param valueHash The hash of the value
+    /// @return The constructed leaf node hash
+    function constructImtLeafNode(
+        bytes1 dummyByte,
+        bytes32 imtKey,
+        bytes1 nextDummyByte,
+        bytes32 nextImtKey,
+        bytes32 valueHash
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                ACTIVE_LEAF_BYTE, // Should be active
+                dummyByte,
+                imtKey,
+                nextDummyByte,
+                nextImtKey,
+                valueHash
+            )
+        );
+    }
+
+    /// @notice Processes a merkle proof against a leaf node
+    /// @dev Computes the merkle root by traversing the proof path
+    /// @param proof The merkle proof path
+    /// @param leafNode The starting leaf node
+    /// @param isLeft Bitmap indicating whether each node is on the left
+    /// @return The computed merkle root
+    function processMerkleProof(
+        bytes32[] calldata proof,
+        bytes32 leafNode,
+        uint256 isLeft
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        uint256 length = proof.length;
+        bytes32 currentNode = leafNode;
+        for (uint256 i = 0; i != length; ++i) {
+            bool _isLeft = isLeft >> i & 1 == 1;
+            if (_isLeft) currentNode = EfficientHashLib.hash(proof[i], currentNode);
+            else currentNode = EfficientHashLib.hash(currentNode, proof[i]);
+        }
+
+        return currentNode;
+    }
+
+    /// @notice Fetches the current L1 blockhash using the L1Block precompile
+    function getL1Blockhash() internal returns (bytes32 blockHash) {
+        bytes4 hashSelector = IL1Block.hash.selector;
+
+        /// @solidity memory-safe-assembly
+        assembly {
+            mstore(0x00, hashSelector)
+            if iszero(call(gas(), L1BLOCK, 0, 0x00, 0x20, 0x00, 0x20)) { revert(0, 0) }
+            blockHash := mload(0x00)
+        }
+    }
+
+    /// @notice Extracts the timestamp from an RLP encoded block header
+    /// @dev Uses Optimism's RLPReader library to properly decode the RLP-encoded block header
+    /// @param blockHeader The RLP encoded block header
+    /// @return timestamp The block timestamp as a uint48
+    function extractTimestampFromBlockHeader(bytes calldata blockHeader)
+        internal
+        pure
+        returns (uint48 timestamp)
+    {
+        // First, convert the bytes to an RLP item
+        RLPReader.RLPItem memory item = RLPReader.toRLPItem(blockHeader);
+
+        // The block header is a list, so we decode it into a list of items
+        RLPReader.RLPItem[] memory headerFields = RLPReader.readList(item);
+
+        // Extract the timestamp field
+        timestamp = uint32(bytes4(bytes32(RLPReader.readBytes(headerFields[11]))));
+    }
+}
