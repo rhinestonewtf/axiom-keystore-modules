@@ -28,9 +28,10 @@
     "spellcheck": "cspell '**'"
   },
   "dependencies": {
+    "@rhinestone/core-modules": "github:rhinestonewtf/core-modules",
     "@rhinestone/modulekit": "^0.5.9",
     "ds-test": "github:dapphub/ds-test#e282159d5170298eb2455a6c05280ab5a73a4ef0",
-    "forge-std": "github:foundry-rs/forge-std#v1.7.6",
+    "forge-std": "github:foundry-rs/forge-std",
     "keystore-periphery": "github:axiom-crypto/keystore-periphery"
   },
   "devDependencies": {

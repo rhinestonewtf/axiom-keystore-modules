@@ -1,16 +1,40 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity >=0.8.27;
 
-import { Test } from "forge-std/Test.sol";
+// Dependencies
+import { Test } from "@forge-std/Test.sol";
+import { RhinestoneModuleKit } from "@rhinestone/modulekit/ModuleKit.sol";
+import { Vm } from "@forge-std/Vm.sol";
 
-abstract contract BaseTest is Test {
+/// @notice An abstract base test contract that provides common test logic.
+abstract contract Base_Test is Test, RhinestoneModuleKit {
     /*//////////////////////////////////////////////////////////////
-                               CONTRACTS
+                               VARIABLES
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice A wallet that represents an admin address.
+    Vm.Wallet public admin;
 
     /*//////////////////////////////////////////////////////////////
                                  SETUP
     //////////////////////////////////////////////////////////////*/
 
-    function setUp() public virtual { }
+    function setUp() public virtual {
+        // Create the admin address.
+        admin = vm.createWallet("admin");
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Sign a message with the admin's private key.
+    /// @param hash The hash of the message to sign.
+    /// @return signature The signature of the message.
+    function signMessage(bytes32 hash) internal returns (bytes memory signature) {
+        // Sign the message with the admin's private key.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(admin, hash);
+        // Return the signature.
+        return abi.encodePacked(r, s, v);
+    }
 }

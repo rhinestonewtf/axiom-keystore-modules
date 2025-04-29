@@ -1,5 +1,5 @@
 // Vendored from:
-// https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/src/libraries/trie/MerkleTrie.sol#2b589df
+// https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/src/libraries/trie/SecureMerkleTrie.sol#2b589df
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;

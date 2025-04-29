@@ -28,3 +28,7 @@ ExcessivelySafeCall/=node_modules/excessively-safe-call/src/
 @lib/=src/lib/
 @account-abstraction/=node_modules/@ERC4337/account-abstraction/contracts/
 @solady/=node_modules/solady/src/
+@forge-std/=node_modules/forge-std/src/
+@test/=test/
+@contracts/=src/
+@rhinestone/core-modules/=node_modules/@rhinestone/core-modules/src/

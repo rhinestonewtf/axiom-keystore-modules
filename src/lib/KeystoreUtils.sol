@@ -27,9 +27,6 @@ library KeystoreUtils {
     /// @notice Error thrown when a proof claiming to be an exclusion proof isn't valid
     error NotAnExclusionProof();
 
-    /// @notice Error thrown when stateless validator is invalid
-    error InvalidStatelessValidator();
-
     /// @notice Error thrown when block header is invalid
     error InvalidBlockHeader();
 
@@ -84,7 +81,7 @@ library KeystoreUtils {
     }
 
     /// @notice Extracts the stateless validator codehash from key data
-    /// @dev The codehash is expected in the first 33 bytes, with a prefix byte
+    /// @dev The codehash is expected in the first 32 bytes
     /// @param keyData The key data to extract from
     /// @return codeHash The extracted creation code hash
     function getStatelessValidatorCodeHash(bytes calldata keyData)
@@ -92,9 +89,8 @@ library KeystoreUtils {
         pure
         returns (bytes32 codeHash)
     {
-        require(bytes1(keyData) == 0x00, InvalidStatelessValidator());
         assembly {
-            codeHash := calldataload(add(keyData.offset, 1))
+            codeHash := calldataload(keyData.offset)
         }
     }
 

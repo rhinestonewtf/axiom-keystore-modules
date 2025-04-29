@@ -16,3 +16,7 @@ number_underscore = "thousands"
 quote_style = "double"
 tab_width = 4
 wrap_comments = true
+
+
+[rpc_endpoints]
+optimism = "https://mainnet.optimism.io"

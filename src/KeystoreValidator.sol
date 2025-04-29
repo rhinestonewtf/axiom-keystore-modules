@@ -37,7 +37,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice The address of the keystore bridge contract.
-    address public immutable KEYSTORE_BRIDGE;
+    address public immutable KEYSTORE_ROLLUP;
 
     /// @notice The storage slot of the keystore state root.
     bytes32 public immutable KEYSTORE_STORAGE_SLOT;
@@ -72,8 +72,8 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _KEYSTORE_BRIDGE, bytes32 _KEYSTORE_STORAGE_SLOT) {
-        KEYSTORE_BRIDGE = _KEYSTORE_BRIDGE;
+    constructor(address _KEYSTORE_ROLLUP, bytes32 _KEYSTORE_STORAGE_SLOT) {
+        KEYSTORE_ROLLUP = _KEYSTORE_ROLLUP;
         KEYSTORE_STORAGE_SLOT = _KEYSTORE_STORAGE_SLOT;
     }
 
@@ -175,7 +175,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Let the statelessValidator verify the signature
         statelessValidator.validateSignatureWithData(
-            userOpHash, data.signatures, data.keyDataProof.keyData
+            userOpHash, data.signatures, data.keyDataProof.keyData[20:]
         );
 
         // Get the block timestamp for the state root
@@ -235,7 +235,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Let the statelessValidator verify the signature
         bool isValid = statelessValidator.validateSignatureWithData(
-            hash, signatureData.signatures, signatureData.keyDataProof.keyData
+            hash, signatureData.signatures, signatureData.keyDataProof.keyData[32:]
         );
 
         // Early return if the signature is invalid
@@ -274,7 +274,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     function cacheKeystoreStateRoot(StorageProof calldata storageProof) external {
         // Verify the storage proof
         (bytes32 keystoreStateRoot, bytes32 _blockhash) =
-            storageProof.verifyStorageSlot(KEYSTORE_BRIDGE, KEYSTORE_STORAGE_SLOT);
+            storageProof.verifyStorageSlot(KEYSTORE_ROLLUP, KEYSTORE_STORAGE_SLOT);
 
         // Check if the blockhash is cached
         require(blockhashes[_blockhash], BlockhashNotFound(_blockhash));

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@rhinestone/core-modules':
+        specifier: github:rhinestonewtf/core-modules
+        version: https://codeload.github.com/rhinestonewtf/core-modules/tar.gz/782692895fdba82fd67c70dbbf6e4581f7ea4a31(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)
       '@rhinestone/modulekit':
         specifier: ^0.5.9
         version: 0.5.9(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)
@@ -15,8 +18,8 @@ importers:
         specifier: github:dapphub/ds-test#e282159d5170298eb2455a6c05280ab5a73a4ef0
         version: https://codeload.github.com/dapphub/ds-test/tar.gz/e282159d5170298eb2455a6c05280ab5a73a4ef0
       forge-std:
-        specifier: github:foundry-rs/forge-std#v1.7.6
-        version: https://codeload.github.com/foundry-rs/forge-std/tar.gz/ae570fec082bfe1c1f45b0acca4a2b4f84d345ce
+        specifier: github:foundry-rs/forge-std
+        version: https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505
       keystore-periphery:
         specifier: github:axiom-crypto/keystore-periphery
         version: https://codeload.github.com/axiom-crypto/keystore-periphery/tar.gz/2e63b68acfb36e10d869f7901e39b53c8ac57127
@@ -263,6 +266,10 @@ packages:
   '@defi-wonderland/natspec-smells@1.1.6':
     resolution: {integrity: sha512-HTdZLEdBs3UakW0JQZ7vO8pb6YCoU3CPQNfLxa0Z9PWAwmgKhSZJbF8dm/okkJEJGRa0dCoOxviJw5jeK+kDiQ==}
     hasBin: true
+
+  '@erc7579/enumerablemap4337@https://codeload.github.com/erc7579/enumerablemap/tar.gz/36291c5aeccb82d25d95e44bec617470e171a1a6':
+    resolution: {tarball: https://codeload.github.com/erc7579/enumerablemap/tar.gz/36291c5aeccb82d25d95e44bec617470e171a1a6}
+    version: 1.0.0
 
   '@ethereumjs/rlp@4.0.1':
     resolution: {integrity: sha512-tqsQiBQDQdmPWE1xkkBq4rlSW5QZpLOUJ5RJh2/9fug+q9tnUhuZoVLk7s0scUIKTOzEtR72DFBXI4WiZcMpvw==}
@@ -512,8 +519,20 @@ packages:
   '@prb/math@4.1.0':
     resolution: {integrity: sha512-ef5Xrlh3BeX4xT5/Wi810dpEPq2bYPndRxgFIaKSU1F/Op/s8af03kyom+mfU7gEpvfIZ46xu8W0duiHplbBMg==}
 
+  '@rhinestone/checknsignatures@https://codeload.github.com/rhinestonewtf/checknsignatures/tar.gz/f8389c186fb58480a9a42d598adebaa1a557762d':
+    resolution: {tarball: https://codeload.github.com/rhinestonewtf/checknsignatures/tar.gz/f8389c186fb58480a9a42d598adebaa1a557762d}
+    version: 0.0.1
+
+  '@rhinestone/core-modules@https://codeload.github.com/rhinestonewtf/core-modules/tar.gz/782692895fdba82fd67c70dbbf6e4581f7ea4a31':
+    resolution: {tarball: https://codeload.github.com/rhinestonewtf/core-modules/tar.gz/782692895fdba82fd67c70dbbf6e4581f7ea4a31}
+    version: 1.0.0
+
   '@rhinestone/erc4337-validation@0.0.5':
     resolution: {integrity: sha512-+WzDOn7Cp7DGw4oLsnWtcfqMkLTJAfC3qdTCYcZdDuBuSNST/E+7Gsau+5Uu97IYgTc7suTo+5OiP5k+E2q79A==}
+
+  '@rhinestone/flatbytes@https://codeload.github.com/rhinestonewtf/flatbytes/tar.gz/8182dc7353bef886be234c54ae36b1e33d6bf8ee':
+    resolution: {tarball: https://codeload.github.com/rhinestonewtf/flatbytes/tar.gz/8182dc7353bef886be234c54ae36b1e33d6bf8ee}
+    version: 0.0.1
 
   '@rhinestone/modulekit@0.5.9':
     resolution: {integrity: sha512-Zc5Qo3dkyVhBo7OQRKOltYd+jlGCtV18TWSmpSvIdXKwUgo5xj8zL73wAwFKTww00zt/wXMbW6Z6ysIQWH3Ezw==}
@@ -630,6 +649,10 @@ packages:
 
   '@types/secp256k1@4.0.6':
     resolution: {integrity: sha512-hHxJU6PAEUn0TP4S/ZOzuTUvJWuZ6eIKeNKb5RBpODvSl6hp1Wrw4s7ATY50rklRCScUDpHzVA/DQdSjJ3UoYQ==}
+
+  FreshCryptoLib@https://codeload.github.com/rdubois-crypto/FreshCryptoLib/tar.gz/8179e08cac72072bd260796633fec41fdfd5b441:
+    resolution: {tarball: https://codeload.github.com/rdubois-crypto/FreshCryptoLib/tar.gz/8179e08cac72072bd260796633fec41fdfd5b441}
+    version: 0.0.0
 
   abbrev@1.0.9:
     resolution: {integrity: sha512-LEyx4aLEC3x6T0UguF6YILf+ntvmOaWsVfENmIW0E9H09vKlLDGelMjjSm0jkDHALj8A8quZ/HapKNigzwge+Q==}
@@ -1287,10 +1310,6 @@ packages:
   forge-std@https://codeload.github.com/foundry-rs/forge-std/tar.gz/8a225d81aa8e2e013580564588c79abb65eacc9e:
     resolution: {tarball: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8a225d81aa8e2e013580564588c79abb65eacc9e}
     version: 1.9.3
-
-  forge-std@https://codeload.github.com/foundry-rs/forge-std/tar.gz/ae570fec082bfe1c1f45b0acca4a2b4f84d345ce:
-    resolution: {tarball: https://codeload.github.com/foundry-rs/forge-std/tar.gz/ae570fec082bfe1c1f45b0acca4a2b4f84d345ce}
-    version: 1.7.6
 
   form-data-encoder@2.1.4:
     resolution: {integrity: sha512-yDYSgNMraqvnxiEXO4hi88+YZxaHC6QKzb5N84iRCTDeRO7ZALpir/lVmf/uXUhnwUr2O4HU8s/n6x+yNjQkHw==}
@@ -2149,9 +2168,9 @@ packages:
     resolution: {integrity: sha512-qMCMfhY040cVHT43K9BFygqYbUPFZKHOg7K73mtTWJRb8pyP3fzf4Ixd5SzdEJQ6MRUg/WBnOLxghZtKKurENQ==}
     engines: {node: '>=10'}
 
-  solady@https://codeload.github.com/vectorized/solady/tar.gz/459b53da824c326e4a018a8e9380ffe5ff76437a:
-    resolution: {tarball: https://codeload.github.com/vectorized/solady/tar.gz/459b53da824c326e4a018a8e9380ffe5ff76437a}
-    version: 0.1.16
+  solady@https://codeload.github.com/vectorized/solady/tar.gz/bf973bd715908728ea81e49100629f7f26ecf566:
+    resolution: {tarball: https://codeload.github.com/vectorized/solady/tar.gz/bf973bd715908728ea81e49100629f7f26ecf566}
+    version: 0.1.17
 
   solarray@https://codeload.github.com/sablier-labs/solarray/tar.gz/6bf10cb34cdace52a3ba5fe437e78cc82df92684:
     resolution: {tarball: https://codeload.github.com/sablier-labs/solarray/tar.gz/6bf10cb34cdace52a3ba5fe437e78cc82df92684}
@@ -2180,6 +2199,10 @@ packages:
     hasBin: true
     peerDependencies:
       hardhat: ^2.11.0
+
+  solmate@https://codeload.github.com/transmissions11/solmate/tar.gz/c93f7716c9909175d45f6ef80a34a650e2d24e56:
+    resolution: {tarball: https://codeload.github.com/transmissions11/solmate/tar.gz/c93f7716c9909175d45f6ef80a34a650e2d24e56}
+    version: 6.8.0
 
   source-map-support@0.5.21:
     resolution: {integrity: sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==}
@@ -2397,6 +2420,10 @@ packages:
   web3-validator@2.0.6:
     resolution: {integrity: sha512-qn9id0/l1bWmvH4XfnG/JtGKKwut2Vokl6YXP5Kfg424npysmtRLe9DgiNBM9Op7QL/aSiaA0TVXibuIuWcizg==}
     engines: {node: '>=14', npm: '>=6.12.0'}
+
+  webauthn-sol@https://codeload.github.com/highskore/webauthn-sol/tar.gz/00b5ba48bac39231dc4a95ba2763ecc02b779c39:
+    resolution: {tarball: https://codeload.github.com/highskore/webauthn-sol/tar.gz/00b5ba48bac39231dc4a95ba2763ecc02b779c39}
+    version: 0.0.0
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -2733,6 +2760,8 @@ snapshots:
       - debug
       - typescript
       - zod
+
+  '@erc7579/enumerablemap4337@https://codeload.github.com/erc7579/enumerablemap/tar.gz/36291c5aeccb82d25d95e44bec617470e171a1a6': {}
 
   '@ethereumjs/rlp@4.0.1': {}
 
@@ -3129,6 +3158,34 @@ snapshots:
 
   '@prb/math@4.1.0': {}
 
+  '@rhinestone/checknsignatures@https://codeload.github.com/rhinestonewtf/checknsignatures/tar.gz/f8389c186fb58480a9a42d598adebaa1a557762d':
+    dependencies:
+      forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505
+      solady: https://codeload.github.com/vectorized/solady/tar.gz/bf973bd715908728ea81e49100629f7f26ecf566
+
+  '@rhinestone/core-modules@https://codeload.github.com/rhinestonewtf/core-modules/tar.gz/782692895fdba82fd67c70dbbf6e4581f7ea4a31(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)':
+    dependencies:
+      '@erc7579/enumerablemap4337': https://codeload.github.com/erc7579/enumerablemap/tar.gz/36291c5aeccb82d25d95e44bec617470e171a1a6
+      '@openzeppelin/contracts': 5.3.0
+      '@rhinestone/checknsignatures': https://codeload.github.com/rhinestonewtf/checknsignatures/tar.gz/f8389c186fb58480a9a42d598adebaa1a557762d
+      '@rhinestone/flatbytes': https://codeload.github.com/rhinestonewtf/flatbytes/tar.gz/8182dc7353bef886be234c54ae36b1e33d6bf8ee
+      '@rhinestone/modulekit': 0.5.9(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)
+      FreshCryptoLib: https://codeload.github.com/rdubois-crypto/FreshCryptoLib/tar.gz/8179e08cac72072bd260796633fec41fdfd5b441
+      ds-test: https://codeload.github.com/dapphub/ds-test/tar.gz/e282159d5170298eb2455a6c05280ab5a73a4ef0
+      forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505
+      solmate: https://codeload.github.com/transmissions11/solmate/tar.gz/c93f7716c9909175d45f6ef80a34a650e2d24e56
+      webauthn-sol: https://codeload.github.com/highskore/webauthn-sol/tar.gz/00b5ba48bac39231dc4a95ba2763ecc02b779c39
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - ethers
+      - hardhat
+      - lodash
+      - supports-color
+      - typechain
+      - typescript
+      - utf-8-validate
+
   '@rhinestone/erc4337-validation@0.0.5(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))':
     dependencies:
       '@openzeppelin/contracts': 5.0.1
@@ -3137,7 +3194,7 @@ snapshots:
       ds-test: https://codeload.github.com/dapphub/ds-test/tar.gz/e282159d5170298eb2455a6c05280ab5a73a4ef0
       forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/8a225d81aa8e2e013580564588c79abb65eacc9e
       prettier: 2.8.8
-      solady: https://codeload.github.com/vectorized/solady/tar.gz/459b53da824c326e4a018a8e9380ffe5ff76437a
+      solady: https://codeload.github.com/vectorized/solady/tar.gz/bf973bd715908728ea81e49100629f7f26ecf566
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -3147,6 +3204,10 @@ snapshots:
       - supports-color
       - typechain
       - utf-8-validate
+
+  '@rhinestone/flatbytes@https://codeload.github.com/rhinestonewtf/flatbytes/tar.gz/8182dc7353bef886be234c54ae36b1e33d6bf8ee':
+    dependencies:
+      forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505
 
   '@rhinestone/modulekit@0.5.9(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)':
     dependencies:
@@ -3158,7 +3219,7 @@ snapshots:
       ds-test: https://codeload.github.com/dapphub/ds-test/tar.gz/e282159d5170298eb2455a6c05280ab5a73a4ef0
       excessively-safe-call: '@nomad-xyz/excessively-safe-call@https://codeload.github.com/nomad-xyz/ExcessivelySafeCall/tar.gz/81cd99ce3e69117d665d7601c330ea03b97acce0'
       forge-std: https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505
-      solady: https://codeload.github.com/vectorized/solady/tar.gz/459b53da824c326e4a018a8e9380ffe5ff76437a
+      solady: https://codeload.github.com/vectorized/solady/tar.gz/bf973bd715908728ea81e49100629f7f26ecf566
       solarray: https://codeload.github.com/sablier-labs/solarray/tar.gz/6bf10cb34cdace52a3ba5fe437e78cc82df92684
       solhint: 5.0.5(typescript@5.8.3)
     transitivePeerDependencies:
@@ -3316,6 +3377,8 @@ snapshots:
   '@types/secp256k1@4.0.6':
     dependencies:
       '@types/node': 22.14.1
+
+  FreshCryptoLib@https://codeload.github.com/rdubois-crypto/FreshCryptoLib/tar.gz/8179e08cac72072bd260796633fec41fdfd5b441: {}
 
   abbrev@1.0.9: {}
 
@@ -4123,8 +4186,6 @@ snapshots:
   forge-std@https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505: {}
 
   forge-std@https://codeload.github.com/foundry-rs/forge-std/tar.gz/8a225d81aa8e2e013580564588c79abb65eacc9e: {}
-
-  forge-std@https://codeload.github.com/foundry-rs/forge-std/tar.gz/ae570fec082bfe1c1f45b0acca4a2b4f84d345ce: {}
 
   form-data-encoder@2.1.4: {}
 
@@ -5061,7 +5122,7 @@ snapshots:
       astral-regex: 2.0.0
       is-fullwidth-code-point: 3.0.0
 
-  solady@https://codeload.github.com/vectorized/solady/tar.gz/459b53da824c326e4a018a8e9380ffe5ff76437a: {}
+  solady@https://codeload.github.com/vectorized/solady/tar.gz/bf973bd715908728ea81e49100629f7f26ecf566: {}
 
   solarray@https://codeload.github.com/sablier-labs/solarray/tar.gz/6bf10cb34cdace52a3ba5fe437e78cc82df92684: {}
 
@@ -5153,6 +5214,8 @@ snapshots:
       semver: 7.7.1
       shelljs: 0.8.5
       web3-utils: 1.10.4
+
+  solmate@https://codeload.github.com/transmissions11/solmate/tar.gz/c93f7716c9909175d45f6ef80a34a650e2d24e56: {}
 
   source-map-support@0.5.21:
     dependencies:
@@ -5370,6 +5433,8 @@ snapshots:
       web3-errors: 1.3.1
       web3-types: 1.10.0
       zod: 3.24.3
+
+  webauthn-sol@https://codeload.github.com/highskore/webauthn-sol/tar.gz/00b5ba48bac39231dc4a95ba2763ecc02b779c39: {}
 
   webidl-conversions@3.0.1: {}
 
