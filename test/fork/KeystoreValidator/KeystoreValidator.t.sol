@@ -14,8 +14,13 @@ import { Fork_Test } from "@test/fork/Fork.t.sol";
 // Types
 import { MODULE_TYPE_VALIDATOR } from
     "@rhinestone/modulekit/accounts/common/interfaces/IERC7579Module.sol";
+import { StorageProof } from "@types/DataTypes.sol";
 
-contract KeystoreValidator_Fork_Test is Fork_Test {
+// Utils
+import { console } from "@forge-std/console.sol";
+import { ProofUtils } from "@test/utils/ProofUtils.sol";
+
+contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
     /*//////////////////////////////////////////////////////////////
                                LIBRARIES
     //////////////////////////////////////////////////////////////*/
@@ -103,6 +108,8 @@ contract KeystoreValidator_Fork_Test is Fork_Test {
         // stateless validation
         keyData = abi.encodePacked(ownableValidator.codehash, abi.encode(threshold, owners));
         keystoreAddress = keccak256(abi.encodePacked(salt, keccak256(keyData), vkeyHash));
+        console.log("Keystore Address:");
+        console.logBytes32(keystoreAddress);
 
         // Register the stateless validator
         keystoreValidator.registerStatelessValidator(ownableValidator, ownableValidator.codehash);
@@ -119,10 +126,29 @@ contract KeystoreValidator_Fork_Test is Fork_Test {
                                MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    modifier withL1Block(uint256 l1BlockHash) {
+    modifier withCachedL1Block(uint256 l1BlockHash) {
         // Set the block hash
         vm.store(L1_BLOCK, bytes32(uint256(0x02)), bytes32(l1BlockHash));
         keystoreValidator.cacheBlockhash();
+        // Call the function
+        _;
+    }
+
+    modifier withCachedKeystoreStateRoot(string memory path) {
+        // Read the storage proof from the JSON file
+        (bytes memory blockHeader, bytes[] memory accountProof, bytes[] memory storageProof) =
+            readStorageProof("test/proofs/Exclusion.json");
+
+        // Create the storage proof
+        StorageProof memory proof = StorageProof({
+            storageValue: bytes32(0x336d75dffb97c4132b4d9594dda1c38651477198b097d67d2c9368a097613107),
+            blockHeader: blockHeader,
+            accountProof: accountProof,
+            storageProof: storageProof
+        });
+
+        // Cache the keystore state root
+        keystoreValidator.cacheKeystoreStateRoot(proof);
         // Call the function
         _;
     }

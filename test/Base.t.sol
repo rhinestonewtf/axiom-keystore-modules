@@ -22,6 +22,8 @@ abstract contract Base_Test is Test, RhinestoneModuleKit {
     function setUp() public virtual {
         // Create the admin address.
         admin = vm.createWallet("admin");
+        // Initialize the module kit.
+        super.init();
     }
 
     /*//////////////////////////////////////////////////////////////
