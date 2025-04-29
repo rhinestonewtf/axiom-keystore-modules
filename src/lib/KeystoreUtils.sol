@@ -7,13 +7,15 @@ import { IL1Block } from "@interfaces/IL1Block.sol";
 // Libraries
 import { EfficientHashLib } from "@solady/utils/EfficientHashLib.sol";
 import { RLPReader } from "@lib/vendor/RLPReader.sol";
+import { SecureMerkleTrie } from "@lib/vendor/SecureMerkleTrie.sol";
 
 // Types
-import { KeyMerkleProofData, SignatureData } from "@types/DataTypes.sol";
+import { KeyMerkleProofData, SignatureData, StorageProof } from "@types/DataTypes.sol";
 
 /// @title KeystoreUtils
-/// @notice A library for Keystore-related operations and proof verification
-/// @dev Contains utilities for IMT proof processing and verification
+/// @notice A library for Keystore-related operations, proof verification, and storage proof
+/// verification
+/// @dev Contains utilities for IMT proof processing and L1 state verification
 library KeystoreUtils {
     /*//////////////////////////////////////////////////////////////
                                  ERRORS
@@ -27,6 +29,18 @@ library KeystoreUtils {
 
     /// @notice Error thrown when stateless validator is invalid
     error InvalidStatelessValidator();
+
+    /// @notice Error thrown when block header is invalid
+    error InvalidBlockHeader();
+
+    /// @notice Error thrown when storage value doesn't match expected value
+    error InvalidStorageValue();
+
+    /// @notice Error thrown when block number is invalid
+    error InvalidBlockNumber();
+
+    /// @notice Error thrown when attempting to verify an exclusion proof for storage
+    error CannotVerifyExclusionProof();
 
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
@@ -51,12 +65,12 @@ library KeystoreUtils {
     address internal constant L1BLOCK = 0x4200000000000000000000000000000000000015;
 
     /*//////////////////////////////////////////////////////////////
-                                INTERNAL
+                           SIGNATURE PROCESSING
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Decodes the user operation signature into SignatureData
+    /// @notice Decodes signature data from bytes
     /// @dev Uses assembly for efficient decoding without copying data
-    /// @param signature The signature bytes from the user operation
+    /// @param signature The signature bytes to decode
     /// @return out The decoded SignatureData
     function decodeSignature(bytes calldata signature)
         internal
@@ -68,6 +82,25 @@ library KeystoreUtils {
             out := signature.offset
         }
     }
+
+    /// @notice Extracts the stateless validator codehash from key data
+    /// @dev The codehash is expected in the first 33 bytes, with a prefix byte
+    /// @param keyData The key data to extract from
+    /// @return codeHash The extracted creation code hash
+    function getStatelessValidatorCodeHash(bytes calldata keyData)
+        internal
+        pure
+        returns (bytes32 codeHash)
+    {
+        require(bytes1(keyData) == 0x00, InvalidStatelessValidator());
+        assembly {
+            codeHash := calldataload(add(keyData.offset, 1))
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              IMT OPERATIONS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Processes key data and its proof against the IMT
     /// @dev Handles both inclusion and exclusion proofs
@@ -93,7 +126,7 @@ library KeystoreUtils {
             // Derive and verify the keystore address
             bytes32 derivedKeystoreAddress =
                 keccak256(abi.encodePacked(salt, dataHash, keyDataProof.vkeyHash));
-            if (keystoreAddress != derivedKeystoreAddress) revert InvalidKeystoreAddress();
+            require(keystoreAddress == derivedKeystoreAddress, InvalidKeystoreAddress());
 
             // Construct the IMT key
             bytes32 imtKey = keccak256(abi.encodePacked(SILOING_BYTES, derivedKeystoreAddress));
@@ -131,28 +164,13 @@ library KeystoreUtils {
         return processMerkleProof(keyDataProof.proof, leafNode, keyDataProof.isLeft);
     }
 
-    /// @notice Extracts the stateless validator codehash from key data
-    /// @dev The codehash is expected in the first 33 bytes, with a prefix byte
-    /// @param keyData The key data to extract from
-    /// @return codeHash The extracted creation code hash
-    function getStatelessValidatorCodeHash(bytes calldata keyData)
-        internal
-        pure
-        returns (bytes32 codeHash)
-    {
-        if (bytes1(keyData) != 0x00) revert InvalidStatelessValidator();
-        assembly {
-            codeHash := calldataload(add(keyData.offset, 1))
-        }
-    }
-
     /// @notice Parses the extra data for exclusion proofs
     /// @dev Extracts the components from packed exclusion extra data
     /// @param extraData The packed exclusion extra data
-    /// @return  prevDummyByte The dummy byte of the previous key
-    /// @return  prevImtKey The IMT key of the previous key
-    /// @return  salt The salt used for deriving the keystore address
-    /// @return  valueHash The hash of the value
+    /// @return prevDummyByte The dummy byte of the previous key
+    /// @return prevImtKey The IMT key of the previous key
+    /// @return salt The salt used for deriving the keystore address
+    /// @return valueHash The hash of the value
     function parseExclusionExtraData(bytes calldata extraData)
         internal
         pure
@@ -225,7 +243,12 @@ library KeystoreUtils {
         return currentNode;
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            L1 BLOCK OPERATIONS
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Fetches the current L1 blockhash using the L1Block precompile
+    /// @return blockHash The current L1 blockhash
     function getL1Blockhash() internal returns (bytes32 blockHash) {
         bytes4 hashSelector = IL1Block.hash.selector;
 
@@ -253,6 +276,85 @@ library KeystoreUtils {
         RLPReader.RLPItem[] memory headerFields = RLPReader.readList(item);
 
         // Extract the timestamp field
-        timestamp = uint32(bytes4(bytes32(RLPReader.readBytes(headerFields[11]))));
+        timestamp = uint48(uint256(bytes32(RLPReader.readBytes(headerFields[11]))));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           STORAGE PROOF VERIFICATION
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Verifies a storage slot value against a storage proof
+    /// @param storageProof The storage proof to verify
+    /// @param _address The address of the contract to verify
+    /// @param storageSlot The storage slot to verify
+    /// @return storageValue The verified storage value
+    /// @return _blockhash The blockhash of the block containing the proof
+    function verifyStorageSlot(
+        StorageProof calldata storageProof,
+        address _address,
+        bytes32 storageSlot
+    )
+        internal
+        pure
+        returns (bytes32 storageValue, bytes32 _blockhash)
+    {
+        // Verify the storage slot
+        _verifyStorageSlot(
+            _address,
+            storageSlot,
+            storageProof.storageValue,
+            storageProof.blockHeader,
+            storageProof.accountProof,
+            storageProof.storageProof
+        );
+
+        // Return the storage value and blockhash
+        return (storageProof.storageValue, keccak256(storageProof.blockHeader));
+    }
+
+    /// @notice Internal function to verify a storage slot value
+    /// @dev Verifies the account proof and storage proof against the state root
+    /// @param _address The address of the contract to verify
+    /// @param storageSlot The storage slot to verify
+    /// @param storageValue The expected storage value
+    /// @param blockHeader The RLP encoded block header
+    /// @param accountProof The account proof
+    /// @param storageProof The storage proof
+    function _verifyStorageSlot(
+        address _address,
+        bytes32 storageSlot,
+        bytes32 storageValue,
+        bytes calldata blockHeader,
+        bytes[] calldata accountProof,
+        bytes[] calldata storageProof
+    )
+        internal
+        pure
+    {
+        // Cannot verify exclusion proofs (zero values)
+        require(storageValue != bytes32(0), CannotVerifyExclusionProof());
+
+        // Decode the block header and extract the state root
+        RLPReader.RLPItem[] memory blockHeaderRlp = RLPReader.readList(blockHeader);
+        // stateRoot is at index 3 in the block header
+        bytes32 stateRoot = bytes32(RLPReader.readBytes(blockHeaderRlp[3]));
+
+        // Verify the account against the state root
+        bytes memory account =
+            SecureMerkleTrie.get(abi.encodePacked(_address), accountProof, stateRoot);
+        RLPReader.RLPItem[] memory accountRlp = RLPReader.readList(account);
+        bytes32 storageRoot = bytes32(RLPReader.readBytes(accountRlp[2]));
+
+        // Verify the storage value against the storage root
+        bytes memory rlpSlotValue =
+            SecureMerkleTrie.get(abi.encodePacked(storageSlot), storageProof, storageRoot);
+        bytes memory bytesSlotValue = RLPReader.readBytes(rlpSlotValue);
+
+        // We need to add padding to the slot value since they are encoded as uint256
+        bytes32 provenStorageValue =
+            bytes32(uint256(bytes32(bytesSlotValue)) >> (8 * (32 - bytesSlotValue.length)));
+
+        // Verify the storage value matches the expected value
+        require(provenStorageValue == storageValue, InvalidStorageValue());
     }
 }

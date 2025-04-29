@@ -6,7 +6,6 @@ import { ERC7579ValidatorBase } from "@rhinestone/modulekit/module-bases/ERC7579
 
 // Interfaces
 import { IKeystoreValidator } from "@interfaces/IKeystoreValidator.sol";
-import { IStorageProofVerifier } from "@axiom/keystore/interfaces/IStorageProofVerifier.sol";
 import { IStatelessValidator } from
     "@rhinestone/modulekit/module-bases/interfaces/IStatelessValidator.sol";
 
@@ -14,7 +13,7 @@ import { IStatelessValidator } from
 import { KeystoreUtils } from "@lib/KeystoreUtils.sol";
 
 // Types
-import { SignatureData, InstallationData } from "@types/DataTypes.sol";
+import { SignatureData, InstallationData, StorageProof } from "@types/DataTypes.sol";
 import { PackedUserOperation } from "@account-abstraction/interfaces/PackedUserOperation.sol";
 import { _packValidationData as _packValidationData4337 } from
     "@rhinestone/modulekit/external/ERC4337.sol";
@@ -23,9 +22,9 @@ import { ValidationData as ValidationData4337 } from
 
 /// @title KeystoreValidator
 /// @notice A validation module for ERC-7579 smart accounts that verifies user operations
-/// using Axiom Keystore's Incremental Merkle Tree (IMT) for secure key management.
+///         using Axiom Keystore's Incremental Merkle Tree (IMT) for secure key management.
 /// @dev This validator integrates with Axiom's Keystore system, which is a specialized ZK rollup
-/// for key management.
+///      for key management. More information can be found at https://axiom.co/
 contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     /*//////////////////////////////////////////////////////////////
                                LIBRARIES
@@ -34,21 +33,8 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     using KeystoreUtils for *;
 
     /*//////////////////////////////////////////////////////////////
-                               CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Constant representing a non-dummy byte in the IMT
-    bytes1 internal constant NON_DUMMY_BYTE = 0x01;
-
-    /// @notice Constant representing an active leaf in the IMT
-    bytes1 internal constant ACTIVE_LEAF_BYTE = 0x01;
-
-    /*//////////////////////////////////////////////////////////////
                                IMMUTABLE
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice The address of the storage proof verifier contract.
-    IStorageProofVerifier public immutable STORAGE_PROOF_VERIFIER;
 
     /// @notice The address of the keystore bridge contract.
     address public immutable KEYSTORE_BRIDGE;
@@ -86,12 +72,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(
-        address _STORAGE_PROOF_VERIFIER,
-        address _KEYSTORE_BRIDGE,
-        bytes32 _KEYSTORE_STORAGE_SLOT
-    ) {
-        STORAGE_PROOF_VERIFIER = IStorageProofVerifier(_STORAGE_PROOF_VERIFIER);
+    constructor(address _KEYSTORE_BRIDGE, bytes32 _KEYSTORE_STORAGE_SLOT) {
         KEYSTORE_BRIDGE = _KEYSTORE_BRIDGE;
         KEYSTORE_STORAGE_SLOT = _KEYSTORE_STORAGE_SLOT;
     }
@@ -157,7 +138,6 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
     /// @param userOp The user operation to validate
     /// @param userOpHash The hash of the user operation
     /// @return ValidationData wrapping the validity timeframe
-    /// @notice Signature validation timeline is determined by the state root timestamp
     /// @dev The validation timeline works as follows:
     ///      - validAfter = state root timestamp (when the key was proven to exist)
     ///      - validUntil = state root timestamp + invalidation time
@@ -291,15 +271,11 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
     /// @notice Caches a keystore state root from a storage proof
     /// @param storageProof The storage proof containing the keystore state root
-    function cacheKeystoreStateRoot(IStorageProofVerifier.StorageProof calldata storageProof)
-        external
-    {
+    function cacheKeystoreStateRoot(StorageProof calldata storageProof) external {
         // Verify the storage proof
-        (bytes32 keystoreStateRoot, bytes32 _blockhash) = STORAGE_PROOF_VERIFIER.verifyStorageSlot({
-            storageProof: storageProof,
-            _address: KEYSTORE_BRIDGE,
-            storageSlot: KEYSTORE_STORAGE_SLOT
-        });
+        (bytes32 keystoreStateRoot, bytes32 _blockhash) =
+            storageProof.verifyStorageSlot(KEYSTORE_BRIDGE, KEYSTORE_STORAGE_SLOT);
+
         // Check if the blockhash is cached
         require(blockhashes[_blockhash], BlockhashNotFound(_blockhash));
 
