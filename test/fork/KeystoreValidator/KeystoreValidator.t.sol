@@ -134,14 +134,14 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
         _;
     }
 
-    modifier withCachedKeystoreStateRoot(string memory path) {
+    modifier withCachedKeystoreStateRoot(string memory path, bytes32 storageValue) {
         // Read the storage proof from the JSON file
         (bytes memory blockHeader, bytes[] memory accountProof, bytes[] memory storageProof) =
             readStorageProof("test/proofs/Exclusion.json");
 
         // Create the storage proof
         StorageProof memory proof = StorageProof({
-            storageValue: bytes32(0xacf894f7c0801ad245b9804131d4cbb11d39b2050a393b97de50aacd1e5ede03),
+            storageValue: storageValue,
             blockHeader: blockHeader,
             accountProof: accountProof,
             storageProof: storageProof

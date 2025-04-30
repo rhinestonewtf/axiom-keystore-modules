@@ -175,7 +175,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Let the statelessValidator verify the signature
         statelessValidator.validateSignatureWithData(
-            userOpHash, data.signatures, data.keyDataProof.keyData[20:]
+            userOpHash, data.signatures, data.keyDataProof.keyData[32:]
         );
 
         // Get the block timestamp for the state root

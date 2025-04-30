@@ -271,8 +271,13 @@ library KeystoreUtils {
         // The block header is a list, so we decode it into a list of items
         RLPReader.RLPItem[] memory headerFields = RLPReader.readList(item);
 
-        // Extract the timestamp field
-        timestamp = uint48(uint256(bytes32(RLPReader.readBytes(headerFields[11]))));
+        // Extract the timestamp field (at index 11)
+        bytes memory timestampBytes = RLPReader.readBytes(headerFields[11]);
+
+        // Convert the bytes to a uint48
+        for (uint8 i; i < timestampBytes.length; i++) {
+            timestamp = (timestamp << 8) | uint8(timestampBytes[i]);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
