@@ -22,7 +22,7 @@ contract KeystoreValidator_ValidateUserOp_Fork_Test is
 
     function test_validateUserOp_with_exclusivityProof()
         public
-        withCachedL1Block(0x5be47f393780654f8c4dc490e0d8da6cc1da44f5da04362f1b62e2a809e20977)
+        withCachedL1Block(0xdf57133cccabd6f973fae98d474da22d8be72bd3d3436a1211aa8f384520796e)
         withCachedKeystoreStateRoot("test/proofs/Exclusivity.json")
     {
         uint256 test;

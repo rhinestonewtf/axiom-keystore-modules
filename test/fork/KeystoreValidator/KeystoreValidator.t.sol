@@ -35,7 +35,7 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
     address constant L1_BLOCK = 0x4200000000000000000000000000000000000015;
 
     // The address of the AxiomKeystoreRollup contract
-    address constant AXIOM_KEYSTORE_ROLLUP = 0x829ce5730041De079995F7E7D9749E11F36Da0Bc;
+    address constant AXIOM_KEYSTORE_ROLLUP = 0x6C8364763d7Be106a9a9F86d9cC8990A2222ae38;
 
     // keccak256(abi.encode(uint256(keccak256("axiom.storage.AxiomKeystoreRollup")) - 1)) &
     // ~bytes32(uint256(0xff))
@@ -141,7 +141,7 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
 
         // Create the storage proof
         StorageProof memory proof = StorageProof({
-            storageValue: bytes32(0x336d75dffb97c4132b4d9594dda1c38651477198b097d67d2c9368a097613107),
+            storageValue: bytes32(0xacf894f7c0801ad245b9804131d4cbb11d39b2050a393b97de50aacd1e5ede03),
             blockHeader: blockHeader,
             accountProof: accountProof,
             storageProof: storageProof
