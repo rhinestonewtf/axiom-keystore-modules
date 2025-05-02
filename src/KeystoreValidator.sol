@@ -3,6 +3,7 @@ pragma solidity 0.8.27;
 
 // Contracts
 import { ERC7579ValidatorBase } from "@rhinestone/modulekit/module-bases/ERC7579ValidatorBase.sol";
+import { ERC7579KeystoreModuleBase } from "@contracts/ERC7579KeystoreModuleBase.sol";
 
 // Interfaces
 import { IKeystoreValidator } from "@interfaces/IKeystoreValidator.sol";
@@ -10,7 +11,7 @@ import { IStatelessValidator } from
     "@rhinestone/modulekit/module-bases/interfaces/IStatelessValidator.sol";
 
 // Libraries
-import { KeystoreUtils } from "@lib/KeystoreUtils.sol";
+import { KeystoreModuleUtils } from "@lib/KeystoreModuleUtils.sol";
 
 // Types
 import { SignatureData, InstallationData, StorageProof } from "@types/DataTypes.sol";
@@ -25,37 +26,20 @@ import { ValidationData as ValidationData4337 } from
 ///         using Axiom Keystore's Incremental Merkle Tree (IMT) for secure key management.
 /// @dev This validator integrates with Axiom's Keystore system, which is a specialized ZK rollup
 ///      for key management. More information can be found at https://axiom.co/
-contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
+contract KeystoreValidator is
+    ERC7579ValidatorBase,
+    ERC7579KeystoreModuleBase,
+    IKeystoreValidator
+{
     /*//////////////////////////////////////////////////////////////
                                LIBRARIES
     //////////////////////////////////////////////////////////////*/
 
-    using KeystoreUtils for *;
+    using KeystoreModuleUtils for *;
 
     /*//////////////////////////////////////////////////////////////
-                               IMMUTABLE
+                          STATELESS VALIDATORS
     //////////////////////////////////////////////////////////////*/
-
-    /// @notice The address of the keystore bridge contract.
-    address public immutable KEYSTORE_ROLLUP;
-
-    /// @notice The storage slot of the keystore state root.
-    bytes32 public immutable KEYSTORE_STORAGE_SLOT;
-
-    /*//////////////////////////////////////////////////////////////
-                              PROOF STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The latest cached keystore state root
-    /// @dev Updated when a newer state root is cached
-    bytes32 public latestKeystoreStateRoot;
-
-    /// @notice Mapping from keystore state roots to their L1 block timestamps
-    /// @dev Used to determine signature validity periods
-    mapping(bytes32 keystoreStateRoot => uint256 l1BlockTimestamp) public keystoreStateRoots;
-
-    /// @notice Mapping of cached L1 blockhashes
-    mapping(bytes32 blockhash => bool isCached) public blockhashes;
 
     /// @notice Mapping from registered code hashes to deployed statelessValidators
     mapping(bytes32 registeredCodeHash => IStatelessValidator statelessValidator) public
@@ -72,10 +56,12 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _KEYSTORE_ROLLUP, bytes32 _KEYSTORE_STORAGE_SLOT) {
-        KEYSTORE_ROLLUP = _KEYSTORE_ROLLUP;
-        KEYSTORE_STORAGE_SLOT = _KEYSTORE_STORAGE_SLOT;
-    }
+    constructor(
+        address _keystoreCache,
+        bytes2 _siloingBytes
+    )
+        ERC7579KeystoreModuleBase(_keystoreCache, _siloingBytes)
+    { }
 
     /*//////////////////////////////////////////////////////////////
                                  CONFIG
@@ -162,7 +148,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         InstallationData storage $ = accountData[userOp.sender];
 
         // Process the IMT proof to get the derived root
-        bytes32 derivedImtRoot = data.keyDataProof.processImtKeyData(dataHash, $.keystoreAddress);
+        bytes32 derivedImtRoot = processImtKeyData(data.keyDataProof, dataHash, $.keystoreAddress);
 
         // Get and validate the statelessValidator
         bytes32 statelessValidatorCodeHash =
@@ -179,7 +165,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         );
 
         // Get the block timestamp for the state root
-        uint48 blockTimestamp = uint48(keystoreStateRoots[derivedImtRoot]);
+        uint48 blockTimestamp = uint48(KEYSTORE_CACHE.keystoreStateRoots(derivedImtRoot));
         require(blockTimestamp != 0, StateRootNotFound(derivedImtRoot));
 
         // Return validation data with appropriate validity timeframe
@@ -221,7 +207,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Process the IMT proof to get the derived root
         bytes32 derivedImtRoot =
-            signatureData.keyDataProof.processImtKeyData(dataHash, $.keystoreAddress);
+            processImtKeyData(signatureData.keyDataProof, dataHash, $.keystoreAddress);
 
         // Get and validate the statelessValidator code hash
         bytes32 statelessValidatorCodeHash =
@@ -242,7 +228,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         if (!isValid) return EIP1271_FAILED;
 
         // Check if the derived root is known
-        uint48 blockTimestamp = uint48(keystoreStateRoots[derivedImtRoot]);
+        uint48 blockTimestamp = uint48(KEYSTORE_CACHE.keystoreStateRoots(derivedImtRoot));
 
         // Check timestamp validity
         uint256 currentTimestamp = block.timestamp;
@@ -255,46 +241,6 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Signature is valid
         return EIP1271_SUCCESS;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                             STATE ROOTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Caches the current L1 blockhash
-    function cacheBlockhash() external {
-        // Cache the blockhash
-        bytes32 _blockhash = KeystoreUtils.getL1Blockhash();
-        emit BlockhashCached(_blockhash);
-        blockhashes[_blockhash] = true;
-    }
-
-    /// @notice Caches a keystore state root from a storage proof
-    /// @param storageProof The storage proof containing the keystore state root
-    function cacheKeystoreStateRoot(StorageProof calldata storageProof) external {
-        // Verify the storage proof
-        (bytes32 keystoreStateRoot, bytes32 _blockhash) =
-            storageProof.verifyStorageSlot(KEYSTORE_ROLLUP, KEYSTORE_STORAGE_SLOT);
-
-        // Check if the blockhash is cached
-        require(blockhashes[_blockhash], BlockhashNotFound(_blockhash));
-
-        // Extract timestamp from block header
-        uint48 blockTimestamp =
-            KeystoreUtils.extractTimestampFromBlockHeader(storageProof.blockHeader);
-
-        // We don't want to allow older storage proofs to prevent frontrunning
-        uint256 currentTimestamp = keystoreStateRoots[keystoreStateRoot];
-        require(blockTimestamp >= currentTimestamp, StorageProofTooOld());
-
-        // Update the timestamp for this state root
-        keystoreStateRoots[keystoreStateRoot] = blockTimestamp;
-
-        // Update the latest state root if newer
-        uint256 latestTimestamp = keystoreStateRoots[latestKeystoreStateRoot];
-        if (blockTimestamp > latestTimestamp) {
-            latestKeystoreStateRoot = keystoreStateRoot;
-        }
     }
 
     /*//////////////////////////////////////////////////////////////
