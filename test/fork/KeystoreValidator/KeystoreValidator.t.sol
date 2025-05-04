@@ -2,7 +2,8 @@
 pragma solidity 0.8.27;
 
 // Contracts
-import { KeystoreValidator } from "@contracts/KeystoreValidator.sol";
+import { KeystoreValidator } from "@modules/KeystoreValidator.sol";
+import { KeystoreCache } from "@auxiliary/KeystoreCache.sol";
 import { OwnableValidator } from "@rhinestone/core-modules/OwnableValidator/OwnableValidator.sol";
 
 // Libraries
@@ -55,6 +56,9 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
     // The address of the KeystoreValidator contract
     KeystoreValidator internal keystoreValidator;
 
+    // The address of the KeystoreCache contract
+    KeystoreCache internal keystoreCache;
+
     // A smart account instance
     AccountInstance internal account;
 
@@ -86,9 +90,12 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
         // Setup base test
         super.setUp();
 
+        // Deploy the KeystoreCache contract
+        keystoreCache =
+            new KeystoreCache(AXIOM_KEYSTORE_ROLLUP, AXIOM_KEYSTORE_ROLLUP_STORAGE_LOCATION);
+
         // Deploy the KeystoreValidator contract
-        keystoreValidator =
-            new KeystoreValidator(AXIOM_KEYSTORE_ROLLUP, AXIOM_KEYSTORE_ROLLUP_STORAGE_LOCATION);
+        keystoreValidator = new KeystoreValidator(address(keystoreCache), bytes2(0x7579));
 
         // Label the KeystoreValidator contract
         vm.label(address(keystoreValidator), "KeystoreValidator");
@@ -129,7 +136,7 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
     modifier withCachedL1Block(uint256 l1BlockHash) {
         // Set the block hash
         vm.store(L1_BLOCK, bytes32(uint256(0x02)), bytes32(l1BlockHash));
-        keystoreValidator.cacheBlockhash();
+        keystoreCache.cacheBlockhash();
         // Call the function
         _;
     }
@@ -148,7 +155,7 @@ contract KeystoreValidator_Fork_Test is Fork_Test, ProofUtils {
         });
 
         // Cache the keystore state root
-        keystoreValidator.cacheKeystoreStateRoot(proof);
+        keystoreCache.cacheKeystoreStateRoot(proof);
         // Call the function
         _;
     }

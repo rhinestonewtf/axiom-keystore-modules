@@ -147,8 +147,8 @@ contract KeystoreValidator is
         // Get the account's installation data
         InstallationData storage $ = accountData[userOp.sender];
 
-        // Process the IMT proof to get the derived root
-        bytes32 derivedImtRoot = processImtKeyData(data.keyDataProof, dataHash, $.keystoreAddress);
+        // Process the IMT proof to get the derived root block timestamp
+        uint48 blockTimestamp = processImtKeyData(data.keyDataProof, dataHash, $.keystoreAddress);
 
         // Get and validate the statelessValidator
         bytes32 statelessValidatorCodeHash =
@@ -163,10 +163,6 @@ contract KeystoreValidator is
         statelessValidator.validateSignatureWithData(
             userOpHash, data.signatures, data.keyDataProof.keyData[32:]
         );
-
-        // Get the block timestamp for the state root
-        uint48 blockTimestamp = uint48(KEYSTORE_CACHE.keystoreStateRoots(derivedImtRoot));
-        require(blockTimestamp != 0, StateRootNotFound(derivedImtRoot));
 
         // Return validation data with appropriate validity timeframe
         return ValidationData.wrap(
@@ -205,8 +201,8 @@ contract KeystoreValidator is
         // Get the account's installation data
         InstallationData storage $ = accountData[sender];
 
-        // Process the IMT proof to get the derived root
-        bytes32 derivedImtRoot =
+        // Process the IMT proof to get the derived root block timestamp
+        uint48 blockTimestamp =
             processImtKeyData(signatureData.keyDataProof, dataHash, $.keystoreAddress);
 
         // Get and validate the statelessValidator code hash
@@ -226,9 +222,6 @@ contract KeystoreValidator is
 
         // Early return if the signature is invalid
         if (!isValid) return EIP1271_FAILED;
-
-        // Check if the derived root is known
-        uint48 blockTimestamp = uint48(KEYSTORE_CACHE.keystoreStateRoots(derivedImtRoot));
 
         // Check timestamp validity
         uint256 currentTimestamp = block.timestamp;

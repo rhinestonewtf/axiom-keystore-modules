@@ -31,4 +31,6 @@ ExcessivelySafeCall/=node_modules/excessively-safe-call/src/
 @forge-std/=node_modules/forge-std/src/
 @test/=test/
 @contracts/=src/
+@modules/=src/modules/
+@auxiliary/=src/aux/
 @rhinestone/core-modules/=node_modules/@rhinestone/core-modules/src/

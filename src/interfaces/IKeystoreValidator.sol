@@ -24,10 +24,6 @@ interface IKeystoreValidator {
     /// @param codeHash The unregistered codeHash
     error UnregisteredCodeHash(bytes32 codeHash);
 
-    /// @notice Error thrown when a state root hasn't been cached
-    /// @param stateRoot The uncached state root
-    error StateRootNotFound(bytes32 stateRoot);
-
     /// @notice Error thrown whe the stateless validator code hash is different from the one
     ///         registered
     /// @param codeHash The expected code hash

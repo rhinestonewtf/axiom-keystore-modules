@@ -36,9 +36,16 @@ abstract contract ERC7579KeystoreModuleBase is ERC7579ModuleBase {
     /// @notice Error thrown when a proof claiming to be an exclusion proof isn't valid
     error NotAnExclusionProof();
 
+    /// @notice Error thrown when a state root hasn't been cached
+    /// @param stateRoot The uncached state root
+    error StateRootNotFound(bytes32 stateRoot);
+
     /*//////////////////////////////////////////////////////////////
                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
+
+    /// @notice Constant representing a dummy byte in the IMT
+    bytes1 internal constant DUMMY_BYTE = 0x00;
 
     /// @notice Constant representing a non-dummy byte in the IMT
     bytes1 internal constant NON_DUMMY_BYTE = 0x01;
@@ -71,12 +78,13 @@ abstract contract ERC7579KeystoreModuleBase is ERC7579ModuleBase {
                               IMT OPERATIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Processes key data and its proof against the IMT
+    /// @notice Processes key data and its proof against the IMT, returning the block timestamp
+    ///         for the state root, reverting if the timestamp is invalid
     /// @dev Handles both inclusion and exclusion proofs
     /// @param keyDataProof The proof for the key data
     /// @param dataHash The hash of the key data
     /// @param keystoreAddress The keystore address from the account's installation data
-    /// @return The derived IMT root, which should match a cached state root
+    /// @return blockTimestamp The block timestamp for the state root
     function processImtKeyData(
         KeyMerkleProofData calldata keyDataProof,
         bytes32 dataHash,
@@ -84,7 +92,7 @@ abstract contract ERC7579KeystoreModuleBase is ERC7579ModuleBase {
     )
         internal
         view
-        returns (bytes32)
+        returns (uint48 blockTimestamp)
     {
         bytes32 leafNode;
         if (keyDataProof.isExclusion) {
@@ -102,8 +110,8 @@ abstract contract ERC7579KeystoreModuleBase is ERC7579ModuleBase {
 
             // Verify the exclusion proof is valid
             if (
-                !(imtKey > prevImtKey || prevDummyByte == 0x00)
-                    && !(imtKey < keyDataProof.nextImtKey || keyDataProof.nextDummyByte == 0x00)
+                !(imtKey > prevImtKey || prevDummyByte == DUMMY_BYTE)
+                    && !(imtKey < keyDataProof.nextImtKey || keyDataProof.nextDummyByte == DUMMY_BYTE)
             ) revert NotAnExclusionProof();
 
             // Construct the leaf node for verification
@@ -130,6 +138,11 @@ abstract contract ERC7579KeystoreModuleBase is ERC7579ModuleBase {
         }
 
         // Process the merkle proof to derive the root
-        return keyDataProof.proof.processMerkleProof(leafNode, keyDataProof.isLeft);
+        bytes32 derivedImtRoot =
+            keyDataProof.proof.processMerkleProof(leafNode, keyDataProof.isLeft);
+
+        // Get the block timestamp for the state root
+        blockTimestamp = uint48(KEYSTORE_CACHE.keystoreStateRoots(derivedImtRoot));
+        require(blockTimestamp != 0, StateRootNotFound(derivedImtRoot));
     }
 }
