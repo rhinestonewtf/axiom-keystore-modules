@@ -1,15 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.27;
 
-// Interfaces
-import { IL1Block } from "@interfaces/IL1Block.sol";
-
 // Libraries
 import { EfficientHashLib } from "@solady/utils/EfficientHashLib.sol";
-import { RLPReader } from "@lib/vendor/RLPReader.sol";
-
-// Types
-import { KeyMerkleProofData, SignatureData, StorageProof } from "@types/DataTypes.sol";
 
 /// @title KeystoreModuleUtils
 /// @notice A library for Keystore-related operations, proof verification, and storage proof
@@ -22,39 +15,6 @@ library KeystoreModuleUtils {
 
     /// @notice Constant representing an active leaf in the IMT
     bytes1 internal constant ACTIVE_LEAF_BYTE = 0x01;
-
-    /*//////////////////////////////////////////////////////////////
-                           SIGNATURE PROCESSING
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Decodes signature data from bytes
-    /// @dev Uses assembly for efficient decoding without copying data
-    /// @param signature The signature bytes to decode
-    /// @return out The decoded SignatureData
-    function decodeSignature(bytes calldata signature)
-        internal
-        pure
-        returns (SignatureData calldata out)
-    {
-        /// @solidity memory-safe-assembly
-        assembly {
-            out := signature.offset
-        }
-    }
-
-    /// @notice Extracts the stateless validator codehash from key data
-    /// @dev The codehash is expected in the first 32 bytes
-    /// @param keyData The key data to extract from
-    /// @return codeHash The extracted creation code hash
-    function getStatelessValidatorCodeHash(bytes calldata keyData)
-        internal
-        pure
-        returns (bytes32 codeHash)
-    {
-        assembly {
-            codeHash := calldataload(keyData.offset)
-        }
-    }
 
     /*//////////////////////////////////////////////////////////////
                               IMT OPERATIONS

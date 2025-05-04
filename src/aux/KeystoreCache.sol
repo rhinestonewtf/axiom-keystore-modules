@@ -10,7 +10,7 @@ import { RLPReader } from "@lib/vendor/RLPReader.sol";
 import { SecureMerkleTrie } from "@lib/vendor/SecureMerkleTrie.sol";
 
 // Types
-import { KeyMerkleProofData, SignatureData, StorageProof } from "@types/DataTypes.sol";
+import { StorageProof } from "@types/DataTypes.sol";
 
 /// @title KeystoreCache
 /// @notice A contract that manages the state roots and blockhashes for the Axiom Keystore

@@ -10,11 +10,8 @@ import { IKeystoreValidator } from "@interfaces/IKeystoreValidator.sol";
 import { IStatelessValidator } from
     "@rhinestone/modulekit/module-bases/interfaces/IStatelessValidator.sol";
 
-// Libraries
-import { KeystoreModuleUtils } from "@lib/KeystoreModuleUtils.sol";
-
 // Types
-import { SignatureData, InstallationData, StorageProof } from "@types/DataTypes.sol";
+import { SignatureData, InstallationData } from "@types/DataTypes.sol";
 import { PackedUserOperation } from "@account-abstraction/interfaces/PackedUserOperation.sol";
 import { _packValidationData as _packValidationData4337 } from
     "@rhinestone/modulekit/external/ERC4337.sol";
@@ -31,12 +28,6 @@ contract KeystoreValidator is
     ERC7579KeystoreModuleBase,
     IKeystoreValidator
 {
-    /*//////////////////////////////////////////////////////////////
-                               LIBRARIES
-    //////////////////////////////////////////////////////////////*/
-
-    using KeystoreModuleUtils for *;
-
     /*//////////////////////////////////////////////////////////////
                           STATELESS VALIDATORS
     //////////////////////////////////////////////////////////////*/
@@ -139,7 +130,7 @@ contract KeystoreValidator is
         returns (ValidationData)
     {
         // Decode the signature data
-        SignatureData calldata data = userOp.signature.decodeSignature();
+        SignatureData calldata data = decodeSignature(userOp.signature);
 
         // Hash the key data for verification
         bytes32 dataHash = keccak256(data.keyDataProof.keyData);
@@ -152,7 +143,7 @@ contract KeystoreValidator is
 
         // Get and validate the statelessValidator
         bytes32 statelessValidatorCodeHash =
-            data.keyDataProof.keyData.getStatelessValidatorCodeHash();
+            getStatelessValidatorCodeHash(data.keyDataProof.keyData);
         IStatelessValidator statelessValidator = statelessValidators[statelessValidatorCodeHash];
         require(
             address(statelessValidator) != address(0),
@@ -193,7 +184,7 @@ contract KeystoreValidator is
         returns (bytes4)
     {
         // Decode the signature data
-        SignatureData calldata signatureData = data.decodeSignature();
+        SignatureData calldata signatureData = decodeSignature(data);
 
         // Hash the key data for verification
         bytes32 dataHash = keccak256(signatureData.keyDataProof.keyData);
@@ -207,7 +198,7 @@ contract KeystoreValidator is
 
         // Get and validate the statelessValidator code hash
         bytes32 statelessValidatorCodeHash =
-            signatureData.keyDataProof.keyData.getStatelessValidatorCodeHash();
+            getStatelessValidatorCodeHash(signatureData.keyDataProof.keyData);
         IStatelessValidator statelessValidator = statelessValidators[statelessValidatorCodeHash];
 
         // Check if the statelessValidator is registered
@@ -263,6 +254,39 @@ contract KeystoreValidator is
         statelessValidators[bytecodeHash] = IStatelessValidator(statelessValidator);
         // Emit an event for the registration
         emit StatelessValidatorRegistered(bytecodeHash, address(statelessValidator));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           SIGNATURE PROCESSING
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Decodes signature data from bytes
+    /// @dev Uses assembly for efficient decoding without copying data
+    /// @param signature The signature bytes to decode
+    /// @return out The decoded SignatureData
+    function decodeSignature(bytes calldata signature)
+        internal
+        pure
+        returns (SignatureData calldata out)
+    {
+        /// @solidity memory-safe-assembly
+        assembly {
+            out := signature.offset
+        }
+    }
+
+    /// @notice Extracts the stateless validator codehash from key data
+    /// @dev The codehash is expected in the first 32 bytes
+    /// @param keyData The key data to extract from
+    /// @return codeHash The extracted creation code hash
+    function getStatelessValidatorCodeHash(bytes calldata keyData)
+        internal
+        pure
+        returns (bytes32 codeHash)
+    {
+        assembly {
+            codeHash := calldataload(keyData.offset)
+        }
     }
 
     /*//////////////////////////////////////////////////////////////

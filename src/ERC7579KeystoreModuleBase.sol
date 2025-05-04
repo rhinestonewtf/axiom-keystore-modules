@@ -11,9 +11,7 @@ import { IKeystoreCache } from "@interfaces/IKeystoreCache.sol";
 import { KeystoreModuleUtils } from "@lib/KeystoreModuleUtils.sol";
 
 // Types
-import {
-    SignatureData, InstallationData, StorageProof, KeyMerkleProofData
-} from "@types/DataTypes.sol";
+import { KeyMerkleProofData } from "@types/DataTypes.sol";
 
 /// @title ERC7579KeystoreModuleBase
 /// @notice Base implementation for ERC-7579 modules that use
