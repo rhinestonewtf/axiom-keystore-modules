@@ -4,7 +4,6 @@ pragma solidity 0.8.27;
 import { ERC7579ValidatorBase } from "modulekit/Modules.sol";
 import { ERC7579KeystoreModuleBase } from "@contracts/ERC7579KeystoreModuleBase.sol";
 import { PackedUserOperation } from "modulekit/external/ERC4337.sol";
-import { SignatureCheckerLib } from "@solady/utils/SignatureCheckerLib.sol";
 import { SentinelList4337Lib, SENTINEL } from "sentinellist/SentinelList4337.sol";
 import { LibSort } from "@solady/utils/LibSort.sol";
 import { CheckSignatures } from "checknsignatures/CheckNSignatures.sol";
@@ -504,38 +503,8 @@ contract KeystoreOwnableValidator is ERC7579ValidatorBase, ERC7579KeystoreModule
                     (uint256 keystoreThreshold, address[] memory keystoreOwners) =
                         abi.decode(signatureData.keyDataProof.keyData, (uint256, address[]));
 
-                    // Cache owners length
-                    uint256 ownersLength = keystoreOwners.length;
-
-                    if (!keystoreOwners.isSortedAndUniquified()) {
-                        revert NotSortedAndUnique();
-                    }
-
-                    // Only update if data is valid
-                    if (
-                        keystoreThreshold > 0 && keystoreOwners.length >= keystoreThreshold
-                            && ownersLength <= MAX_OWNERS
-                    ) {
-                        // Update threshold
-                        threshold[account] = keystoreThreshold;
-
-                        // Clear and update owners
-                        owners.popAll(account);
-                        ownerCount[account] = keystoreOwners.length;
-                        owners.init(account);
-
-                        // Add new owners
-                        for (uint256 i = 0; i < keystoreOwners.length; i++) {
-                            address owner = keystoreOwners[i];
-                            if (owner != address(0)) {
-                                owners.push(account, owner);
-                            } else {
-                                revert InvalidOwner(owner);
-                            }
-                        }
-                    } else {
-                        revert InvalidOwnerCount();
-                    }
+                    // Cache the owners and threshold
+                    cacheOwnersAndThreshold(account, keystoreThreshold, keystoreOwners);
                 }
             }
 
@@ -603,6 +572,44 @@ contract KeystoreOwnableValidator is ERC7579ValidatorBase, ERC7579KeystoreModule
         /// @solidity memory-safe-assembly
         assembly {
             out := signature.offset
+        }
+    }
+
+    function cacheOwnersAndThreshold(
+        address account,
+        uint256 _threshold,
+        address[] memory _owners
+    )
+        internal
+    {
+        // check that owners are sorted and uniquified
+        if (!_owners.isSortedAndUniquified()) {
+            revert NotSortedAndUnique();
+        }
+
+        // check that threshold is set
+        if (_threshold == 0) {
+            revert InvalidThreshold();
+        }
+
+        // check that the threshold is less than the number of owners
+        if (ownerCount[account] < _threshold) {
+            revert InvalidThreshold();
+        }
+
+        // cache the owner count
+        ownerCount[account] = _owners.length;
+
+        // Clear old owners
+        owners.popAll(account);
+
+        // cache the owners
+        owners.init(account);
+        for (uint256 i = 0; i < _owners.length; i++) {
+            if (_owners[i] == address(0)) {
+                revert InvalidOwner(_owners[i]);
+            }
+            owners.push(account, _owners[i]);
         }
     }
 
