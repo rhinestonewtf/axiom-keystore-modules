@@ -42,7 +42,13 @@
     "@rhinestone/erc4337-validation": "^0.0.5",
     "excessively-safe-call": "github:nomad-xyz/ExcessivelySafeCall",
     "solarray": "github:sablier-labs/solarray",
-    "solhint": "^5.0.5"
+    "solhint": "^5.0.5",
+    "@erc7579/enumerablemap4337": "github:erc7579/enumerablemap",
+    "@openzeppelin/contracts": "^5.3.0",
+    "@rhinestone/flatbytes": "github:rhinestonewtf/flatbytes",
+    "FreshCryptoLib": "github:rdubois-crypto/FreshCryptoLib",
+    "solmate": "github:transmissions11/solmate",
+    "webauthn-sol": "github:highskore/webauthn-sol"
   },
   "devDependencies": {
     "@defi-wonderland/natspec-smells": "^1.1.1",
