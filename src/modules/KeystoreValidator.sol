@@ -3,17 +3,15 @@ pragma solidity 0.8.27;
 
 // Contracts
 import { ERC7579ValidatorBase } from "@rhinestone/modulekit/module-bases/ERC7579ValidatorBase.sol";
+import { ERC7579KeystoreModuleBase } from "@contracts/ERC7579KeystoreModuleBase.sol";
 
 // Interfaces
 import { IKeystoreValidator } from "@interfaces/IKeystoreValidator.sol";
 import { IStatelessValidator } from
     "@rhinestone/modulekit/module-bases/interfaces/IStatelessValidator.sol";
 
-// Libraries
-import { KeystoreUtils } from "@lib/KeystoreUtils.sol";
-
 // Types
-import { SignatureData, InstallationData, StorageProof } from "@types/DataTypes.sol";
+import { SignatureData, InstallationData } from "@types/DataTypes.sol";
 import { PackedUserOperation } from "@account-abstraction/interfaces/PackedUserOperation.sol";
 import { _packValidationData as _packValidationData4337 } from
     "@rhinestone/modulekit/external/ERC4337.sol";
@@ -25,37 +23,14 @@ import { ValidationData as ValidationData4337 } from
 ///         using Axiom Keystore's Incremental Merkle Tree (IMT) for secure key management.
 /// @dev This validator integrates with Axiom's Keystore system, which is a specialized ZK rollup
 ///      for key management. More information can be found at https://axiom.co/
-contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
+contract KeystoreValidator is
+    ERC7579ValidatorBase,
+    ERC7579KeystoreModuleBase,
+    IKeystoreValidator
+{
     /*//////////////////////////////////////////////////////////////
-                               LIBRARIES
+                          STATELESS VALIDATORS
     //////////////////////////////////////////////////////////////*/
-
-    using KeystoreUtils for *;
-
-    /*//////////////////////////////////////////////////////////////
-                               IMMUTABLE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The address of the keystore bridge contract.
-    address public immutable KEYSTORE_ROLLUP;
-
-    /// @notice The storage slot of the keystore state root.
-    bytes32 public immutable KEYSTORE_STORAGE_SLOT;
-
-    /*//////////////////////////////////////////////////////////////
-                              PROOF STATE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice The latest cached keystore state root
-    /// @dev Updated when a newer state root is cached
-    bytes32 public latestKeystoreStateRoot;
-
-    /// @notice Mapping from keystore state roots to their L1 block timestamps
-    /// @dev Used to determine signature validity periods
-    mapping(bytes32 keystoreStateRoot => uint256 l1BlockTimestamp) public keystoreStateRoots;
-
-    /// @notice Mapping of cached L1 blockhashes
-    mapping(bytes32 blockhash => bool isCached) public blockhashes;
 
     /// @notice Mapping from registered code hashes to deployed statelessValidators
     mapping(bytes32 registeredCodeHash => IStatelessValidator statelessValidator) public
@@ -72,10 +47,12 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _KEYSTORE_ROLLUP, bytes32 _KEYSTORE_STORAGE_SLOT) {
-        KEYSTORE_ROLLUP = _KEYSTORE_ROLLUP;
-        KEYSTORE_STORAGE_SLOT = _KEYSTORE_STORAGE_SLOT;
-    }
+    constructor(
+        address _keystoreCache,
+        bytes2 _siloingBytes
+    )
+        ERC7579KeystoreModuleBase(_keystoreCache, _siloingBytes)
+    { }
 
     /*//////////////////////////////////////////////////////////////
                                  CONFIG
@@ -153,7 +130,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         returns (ValidationData)
     {
         // Decode the signature data
-        SignatureData calldata data = userOp.signature.decodeSignature();
+        SignatureData calldata data = decodeSignature(userOp.signature);
 
         // Hash the key data for verification
         bytes32 dataHash = keccak256(data.keyDataProof.keyData);
@@ -161,12 +138,12 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         // Get the account's installation data
         InstallationData storage $ = accountData[userOp.sender];
 
-        // Process the IMT proof to get the derived root
-        bytes32 derivedImtRoot = data.keyDataProof.processImtKeyData(dataHash, $.keystoreAddress);
+        // Process the IMT proof to get the derived root block timestamp
+        uint48 blockTimestamp = processImtKeyData(data.keyDataProof, dataHash, $.keystoreAddress);
 
         // Get and validate the statelessValidator
         bytes32 statelessValidatorCodeHash =
-            data.keyDataProof.keyData.getStatelessValidatorCodeHash();
+            getStatelessValidatorCodeHash(data.keyDataProof.keyData);
         IStatelessValidator statelessValidator = statelessValidators[statelessValidatorCodeHash];
         require(
             address(statelessValidator) != address(0),
@@ -177,10 +154,6 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         statelessValidator.validateSignatureWithData(
             userOpHash, data.signatures, data.keyDataProof.keyData[32:]
         );
-
-        // Get the block timestamp for the state root
-        uint48 blockTimestamp = uint48(keystoreStateRoots[derivedImtRoot]);
-        require(blockTimestamp != 0, StateRootNotFound(derivedImtRoot));
 
         // Return validation data with appropriate validity timeframe
         return ValidationData.wrap(
@@ -211,7 +184,7 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         returns (bytes4)
     {
         // Decode the signature data
-        SignatureData calldata signatureData = data.decodeSignature();
+        SignatureData calldata signatureData = decodeSignature(data);
 
         // Hash the key data for verification
         bytes32 dataHash = keccak256(signatureData.keyDataProof.keyData);
@@ -219,13 +192,13 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         // Get the account's installation data
         InstallationData storage $ = accountData[sender];
 
-        // Process the IMT proof to get the derived root
-        bytes32 derivedImtRoot =
-            signatureData.keyDataProof.processImtKeyData(dataHash, $.keystoreAddress);
+        // Process the IMT proof to get the derived root block timestamp
+        uint48 blockTimestamp =
+            processImtKeyData(signatureData.keyDataProof, dataHash, $.keystoreAddress);
 
         // Get and validate the statelessValidator code hash
         bytes32 statelessValidatorCodeHash =
-            signatureData.keyDataProof.keyData.getStatelessValidatorCodeHash();
+            getStatelessValidatorCodeHash(signatureData.keyDataProof.keyData);
         IStatelessValidator statelessValidator = statelessValidators[statelessValidatorCodeHash];
 
         // Check if the statelessValidator is registered
@@ -241,9 +214,6 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         // Early return if the signature is invalid
         if (!isValid) return EIP1271_FAILED;
 
-        // Check if the derived root is known
-        uint48 blockTimestamp = uint48(keystoreStateRoots[derivedImtRoot]);
-
         // Check timestamp validity
         uint256 currentTimestamp = block.timestamp;
         if (
@@ -255,46 +225,6 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
 
         // Signature is valid
         return EIP1271_SUCCESS;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                             STATE ROOTS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Caches the current L1 blockhash
-    function cacheBlockhash() external {
-        // Cache the blockhash
-        bytes32 _blockhash = KeystoreUtils.getL1Blockhash();
-        emit BlockhashCached(_blockhash);
-        blockhashes[_blockhash] = true;
-    }
-
-    /// @notice Caches a keystore state root from a storage proof
-    /// @param storageProof The storage proof containing the keystore state root
-    function cacheKeystoreStateRoot(StorageProof calldata storageProof) external {
-        // Verify the storage proof
-        (bytes32 keystoreStateRoot, bytes32 _blockhash) =
-            storageProof.verifyStorageSlot(KEYSTORE_ROLLUP, KEYSTORE_STORAGE_SLOT);
-
-        // Check if the blockhash is cached
-        require(blockhashes[_blockhash], BlockhashNotFound(_blockhash));
-
-        // Extract timestamp from block header
-        uint48 blockTimestamp =
-            KeystoreUtils.extractTimestampFromBlockHeader(storageProof.blockHeader);
-
-        // We don't want to allow older storage proofs to prevent frontrunning
-        uint256 currentTimestamp = keystoreStateRoots[keystoreStateRoot];
-        require(blockTimestamp >= currentTimestamp, StorageProofTooOld());
-
-        // Update the timestamp for this state root
-        keystoreStateRoots[keystoreStateRoot] = blockTimestamp;
-
-        // Update the latest state root if newer
-        uint256 latestTimestamp = keystoreStateRoots[latestKeystoreStateRoot];
-        if (blockTimestamp > latestTimestamp) {
-            latestKeystoreStateRoot = keystoreStateRoot;
-        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -324,6 +254,39 @@ contract KeystoreValidator is ERC7579ValidatorBase, IKeystoreValidator {
         statelessValidators[bytecodeHash] = IStatelessValidator(statelessValidator);
         // Emit an event for the registration
         emit StatelessValidatorRegistered(bytecodeHash, address(statelessValidator));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           SIGNATURE PROCESSING
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Decodes signature data from bytes
+    /// @dev Uses assembly for efficient decoding without copying data
+    /// @param signature The signature bytes to decode
+    /// @return out The decoded SignatureData
+    function decodeSignature(bytes calldata signature)
+        internal
+        pure
+        returns (SignatureData calldata out)
+    {
+        /// @solidity memory-safe-assembly
+        assembly {
+            out := signature.offset
+        }
+    }
+
+    /// @notice Extracts the stateless validator codehash from key data
+    /// @dev The codehash is expected in the first 32 bytes
+    /// @param keyData The key data to extract from
+    /// @return codeHash The extracted creation code hash
+    function getStatelessValidatorCodeHash(bytes calldata keyData)
+        internal
+        pure
+        returns (bytes32 codeHash)
+    {
+        assembly {
+            codeHash := calldataload(keyData.offset)
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
