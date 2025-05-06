@@ -8,15 +8,33 @@ importers:
 
   .:
     dependencies:
+      '@ERC4337/account-abstraction':
+        specifier: github:kopy-kat/account-abstraction#develop
+        version: accountabstraction@https://codeload.github.com/kopy-kat/account-abstraction/tar.gz/c5887153fbfe3ed09b2637cac39873f96d676f38(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))
+      '@ERC4337/account-abstraction-v0.6':
+        specifier: github:eth-infinitism/account-abstraction#v0.6.0
+        version: accountabstraction@https://codeload.github.com/eth-infinitism/account-abstraction/tar.gz/7174d6d845618dbd11cee68eefa715f5263690b6(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))
+      '@prb/math':
+        specifier: ^4.1.0
+        version: 4.1.0
       '@rhinestone/core-modules':
         specifier: github:rhinestonewtf/core-modules
         version: https://codeload.github.com/rhinestonewtf/core-modules/tar.gz/782692895fdba82fd67c70dbbf6e4581f7ea4a31(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)
+      '@rhinestone/erc4337-validation':
+        specifier: ^0.0.5
+        version: 0.0.5(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))
       '@rhinestone/modulekit':
         specifier: ^0.5.9
         version: 0.5.9(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)
+      '@rhinestone/sentinellist':
+        specifier: github:rhinestonewtf/sentinellist
+        version: https://codeload.github.com/rhinestonewtf/sentinellist/tar.gz/e722c5cc68c570d535bc3c9f85b3ce90cdc38807
       ds-test:
         specifier: github:dapphub/ds-test#e282159d5170298eb2455a6c05280ab5a73a4ef0
         version: https://codeload.github.com/dapphub/ds-test/tar.gz/e282159d5170298eb2455a6c05280ab5a73a4ef0
+      excessively-safe-call:
+        specifier: github:nomad-xyz/ExcessivelySafeCall
+        version: '@nomad-xyz/excessively-safe-call@https://codeload.github.com/nomad-xyz/ExcessivelySafeCall/tar.gz/81cd99ce3e69117d665d7601c330ea03b97acce0'
       forge-std:
         specifier: github:foundry-rs/forge-std
         version: https://codeload.github.com/foundry-rs/forge-std/tar.gz/77041d2ce690e692d6e03cc812b57d1ddaa4d505
@@ -26,6 +44,12 @@ importers:
       solady:
         specifier: ^0.1.17
         version: 0.1.17
+      solarray:
+        specifier: github:sablier-labs/solarray
+        version: https://codeload.github.com/sablier-labs/solarray/tar.gz/6bf10cb34cdace52a3ba5fe437e78cc82df92684
+      solhint:
+        specifier: ^5.0.5
+        version: 5.0.5(typescript@5.8.3)
     devDependencies:
       '@defi-wonderland/natspec-smells':
         specifier: ^1.1.1
@@ -33,9 +57,6 @@ importers:
       cspell:
         specifier: ^8.6.0
         version: 8.19.2
-      solhint:
-        specifier: ^5.0.1
-        version: 5.0.5(typescript@5.8.3)
 
 packages:
 
