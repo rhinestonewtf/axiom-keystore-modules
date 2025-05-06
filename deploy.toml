@@ -1,0 +1,26 @@
+[deployments]
+rpcs = [
+    # Base
+    # "https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}",
+    "https://base-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}",
+]
+
+verification_url="https://api.tenderly.co/api/v1/account/rhinestone/project/chain-abstraction/etherscan/verify"
+[deployments.verifier]
+# required to enable verification
+api_key="${TENDERLY_API_KEY}"
+#optional verifier url - default is etherscan.io. Supports chain injection as {{chain_id}} place holder
+url = "https://api.tenderly.co/api/v1/account/rhinestone/project/chain-abstraction/etherscan/verify/network/{{chain_id}}"
+
+[deployments.dependencies]
+entrypoint = "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
+
+[deployments.module.KeystoreValidator]
+file = "./artifacts/KeystoreValidator/KeystoreValidator.json"
+source_file="./artifacts/KeystoreValidator/verify.json"
+args_sig = "(address, bytes2)"
+args = [
+"0xbE8877ab2B97e8Ca4A2d0Ae9B10ed12cC9646190", # Keystore Cache
+"0x7579", # Siloing Bytes
+]
+salt = "0x0000000000000000000000000000000000000000e5068a3f93a9e201a1839999"
