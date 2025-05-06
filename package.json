@@ -34,6 +34,7 @@
     "ds-test": "github:dapphub/ds-test#e282159d5170298eb2455a6c05280ab5a73a4ef0",
     "forge-std": "github:foundry-rs/forge-std",
     "keystore-periphery": "github:axiom-crypto/keystore-periphery",
+    "@rhinestone/checknsignatures": "github:rhinestonewtf/checknsignatures",
     "solady": "^0.1.17",
     "@ERC4337/account-abstraction": "github:kopy-kat/account-abstraction#develop",
     "@ERC4337/account-abstraction-v0.6": "github:eth-infinitism/account-abstraction#v0.6.0",

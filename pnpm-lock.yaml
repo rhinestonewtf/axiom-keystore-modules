@@ -17,6 +17,9 @@ importers:
       '@prb/math':
         specifier: ^4.1.0
         version: 4.1.0
+      '@rhinestone/checknsignatures':
+        specifier: github:rhinestonewtf/checknsignatures
+        version: https://codeload.github.com/rhinestonewtf/checknsignatures/tar.gz/f8389c186fb58480a9a42d598adebaa1a557762d
       '@rhinestone/core-modules':
         specifier: github:rhinestonewtf/core-modules
         version: https://codeload.github.com/rhinestonewtf/core-modules/tar.gz/782692895fdba82fd67c70dbbf6e4581f7ea4a31(ethers@5.8.0)(hardhat@2.23.0(typescript@5.8.3))(lodash@4.17.21)(typechain@5.2.0(typescript@5.8.3))(typescript@5.8.3)
