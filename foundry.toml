@@ -4,7 +4,7 @@ src = "src"
 out = "out"
 script = "script"
 libs = ["node_modules"]
-fs_permissions = [{ access = "read", path = "test/proofs"}]
+fs_permissions = [{ access = "read", path = "test/proofs"}, { access = "read", path = "proof_data.json"}]
 allow_paths = ["*", "/"]
 
 [fmt]
