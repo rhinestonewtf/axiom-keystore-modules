@@ -23,7 +23,7 @@ echo "Retrieved block header"
 
 # Get the proof for that specific block
 echo "Fetching storage proof..."
-proof_result=$(cast rpc eth_getProof "0x6C8364763d7Be106a9a9F86d9cC8990A2222ae38" '["0xc94330da5d5688c06df0ade6bfd773c87249c0b9f38b25021e2c16ab9672d000"]' "$l1_block_number_hex" --rpc-url https://rpc.therpc.io/ethereum-sepolia)
+proof_result=$(cast rpc eth_getProof "0xd7304aA4F048B07f75347b84746211C196Fc2bEa" '["0xc94330da5d5688c06df0ade6bfd773c87249c0b9f38b25021e2c16ab9672d000"]' "$l1_block_number_hex" --rpc-url https://rpc.therpc.io/ethereum-sepolia)
 echo "Retrieved storage proof"
 
 # Extract the specific fields from the proof

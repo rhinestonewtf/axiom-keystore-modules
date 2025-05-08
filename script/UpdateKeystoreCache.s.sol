@@ -19,7 +19,7 @@ contract UpdateKeystoreStateRoot is Script {
 
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        keystoreCache = KeystoreCache(address(0xbE8877ab2B97e8Ca4A2d0Ae9B10ed12cC9646190));
+        keystoreCache = KeystoreCache(address(0x51886f20EAC4347a5978A5590eBb065Ce5830bB1));
 
         // Read the proof data file
         string memory proofDataJson = vm.readFile("proof_data.json");
@@ -57,7 +57,7 @@ contract UpdateBlockhash is Script {
 
     function run() public {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        keystoreCache = KeystoreCache(address(0xbE8877ab2B97e8Ca4A2d0Ae9B10ed12cC9646190));
+        keystoreCache = KeystoreCache(address(0x51886f20EAC4347a5978A5590eBb065Ce5830bB1));
 
         // Cache the L1 block hash
         keystoreCache.cacheBlockhash();
