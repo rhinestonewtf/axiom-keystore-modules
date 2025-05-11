@@ -1,27 +1,21 @@
-# Femplate
+# Axiom Keystore Modules
 
-**A Foundry template for Rhinestone projects**
+A proof of concept for integrating ERC-7579 modules with [Axiom Keystore](https://keystore-docs.axiom.xyz/introduction) - a ZK rollup for secure key management.
 
-## Using this repo
+## Core Components
 
-To install the dependencies, run:
+### ERC7579KeystoreModuleBase
+Base module enabling Keystore integration for ERC-7579 modules:
+- Processes IMT proofs 
+- Verifies keystore addresses
+- Handles inclusion/exclusion proofs
 
-```bash
-pnpm install
-```
+### Example Modules
+- **KeystoreValidator**: Stateless validator multiplexor using the Axiom Keystore state as source of truth.
+- **KeystoreOwnableValidator**: [OwnableValidator](https://github.com/rhinestonewtf/core-modules/blob/main/src/OwnableValidator/OwnableValidator.sol) empowered with optional Keystore state usage.
 
-To build the project, run:
+### Auxiliary Contracts
+- **KeystoreCache**: Utility for caching keystore roots and L1 blocks
 
-```bash
-pnpm build
-```
-
-To run the tests, run:
-
-```bash
-pnpm test
-```
-
-## Contributing
-
-For feature or change requests, feel free to open a PR, start a discussion or get in touch with us.
+## Utility Libraries
+- **KeystoreModuleUtils**: IMT proof processing utilities
